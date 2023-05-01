@@ -3,6 +3,7 @@
 namespace Kiralyta\Ntak\Tests;
 
 use Kiralyta\Ntak\Enums\Category;
+use Kiralyta\Ntak\Enums\SubCategory;
 use Kiralyta\Ntak\NTAK;
 use PHPUnit\Framework\TestCase;
 
@@ -30,11 +31,19 @@ class CategoriesTest extends TestCase
     {
         $randomCategory = $this->randomCategory();
 
-        dump($randomCategory);
-
         $this->assertSame(
             $randomCategory->subCategories(),
             NTAK::subCategories($randomCategory)
+        );
+
+        $randomSubCategory = collect($randomCategory->subCategories())
+            ->random();
+
+        $this->assertSame(
+            true,
+            collect(NTAK::subCategories($randomCategory))->contains(fn (SubCategory $subCategory) =>
+                $subCategory === $randomSubCategory
+            )
         );
     }
 
