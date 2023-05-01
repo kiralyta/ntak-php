@@ -1,0 +1,17 @@
+{
+    "name": "kiralyta/ntak",
+    "description": "An easy to use NTAK PHP Api",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "Kiralyta\\Ntak\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Tamás Király",
+            "email": "kiralyta@gmail.com"
+        }
+    ],
+    "require": {}
+}
