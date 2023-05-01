@@ -4,4 +4,6 @@
 
 ```composer install --dev```
 
-Running tests
+Run tests:
+
+```vendor/bin/phpunit src/Tests```
