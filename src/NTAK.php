@@ -5,6 +5,9 @@ namespace Kiralyta\Ntak;
 use Carbon\Carbon;
 use Kiralyta\Ntak\Enums\Category;
 use Kiralyta\Ntak\Enums\DayType;
+use Kiralyta\Ntak\Enums\OrderType;
+use Kiralyta\Ntak\Enums\PaymentType;
+use Kiralyta\Ntak\Models\NTAKOrder;
 
 class NTAK
 {
@@ -18,7 +21,8 @@ class NTAK
     public function __construct(
         protected NTAKClient $client,
         protected Carbon $when
-    ) { }
+    ) {
+    }
 
     /**
      * Lists the categories
@@ -54,6 +58,46 @@ class NTAK
     }
 
     /**
+     * storeOrder
+     *
+     * @param  NTAKOrder $ntakOrder
+     * @return void
+     */
+    public function storeOrder(
+        NTAKOrder $ntakOrder
+    ): void {
+        $message = [
+            'rendelesOsszesitok' => [
+                [
+                    'rendelesBesorolasa'           => $ntakOrder->orderType->name,
+                    'rmsRendelesAzonosito'         => $ntakOrder->orderId,
+                    'hivatkozottRendelesOsszesito' => $ntakOrder->ntakOrderId,
+                    'targynap'                     => $ntakOrder->end->format('Y-m-d'),
+                    'rendelesKezdete'              => $ntakOrder->start->toRfc3339String(true),
+                    'rendelesVege'                 => $ntakOrder->end->toRfc3339String(true),
+                    'helybenFogyasztott'           => $ntakOrder->isAtTheSpot,
+                    'osszesitett'                  => false,
+                    'fizetésiInformációk'          => [
+                        'rendelesVegosszegeHUF' => $ntakOrder->total,
+                        'fizetesiModok'         => [
+                            [
+                                'fizetesiMod'       => $ntakOrder->paymentType->name,
+                                'fizetettOsszegHUF' => $ntakOrder->paymentType !== PaymentType::KESZPENZHUF
+                                    ? $ntakOrder->total
+                                    : (int) round($ntakOrder->total / 5) * 5
+                            ]
+                        ]
+                    ],
+
+                    // TODO
+                ]
+            ],
+        ];
+
+        $this->client->message($message, $this->when);
+    }
+
+    /**
      * closeDay
      *
      * @param  Carbon  $start
@@ -66,12 +110,12 @@ class NTAK
         ?Carbon $start,
         ?Carbon $end,
         DayType $dayType,
-        int $tips = 0): void
-    {
+        int $tips = 0
+    ): void {
         $message = [
             'zarasiInformaciok' => [
                 'targynap'           => $start->format('Y-m-d'),
-                'targynapBesorolasa' => $dayType,
+                'targynapBesorolasa' => $dayType->name,
                 'nyitasIdopontja'    => $dayType !== DayType::ADOTT_NAPON_ZARVA
                     ? $start->toRfc3339String()
                     : null,

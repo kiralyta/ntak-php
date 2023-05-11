@@ -43,6 +43,8 @@ class NTAKClient
         );
 
         dump($body);
+
+        // Send request with guzzle
     }
 
     /**

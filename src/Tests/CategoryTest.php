@@ -7,7 +7,7 @@ use Kiralyta\Ntak\Enums\SubCategory;
 use Kiralyta\Ntak\NTAK;
 use PHPUnit\Framework\TestCase;
 
-class CategoriesTest extends TestCase
+class CategoryTest extends TestCase
 {
     /**
      * test_list_categories
@@ -41,7 +41,8 @@ class CategoriesTest extends TestCase
 
         $this->assertSame(
             true,
-            collect(NTAK::subCategories($randomCategory))->contains(fn (SubCategory $subCategory) =>
+            collect(NTAK::subCategories($randomCategory))->contains(
+                fn (SubCategory $subCategory) =>
                 $subCategory === $randomSubCategory
             )
         );
