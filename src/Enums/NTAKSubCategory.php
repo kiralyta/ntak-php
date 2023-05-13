@@ -4,7 +4,7 @@ namespace Kiralyta\Ntak\Enums;
 
 use Kiralyta\Ntak\Traits\EnumToArray;
 
-enum SubCategory: string
+enum NTAKSubCategory: string
 {
     use EnumToArray;
 

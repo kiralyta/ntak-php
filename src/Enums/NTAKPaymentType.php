@@ -2,7 +2,7 @@
 
 namespace Kiralyta\Ntak\Enums;
 
-enum PaymentType: string
+enum NTAKPaymentType: string
 {
     case KESZPENZHUF = 'Készpénz huf';
     case KESZPENZEUR = 'Készpénz eur';

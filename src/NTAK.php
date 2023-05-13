@@ -3,10 +3,10 @@
 namespace Kiralyta\Ntak;
 
 use Carbon\Carbon;
-use Kiralyta\Ntak\Enums\Category;
-use Kiralyta\Ntak\Enums\DayType;
-use Kiralyta\Ntak\Enums\OrderType;
-use Kiralyta\Ntak\Enums\PaymentType;
+use Kiralyta\Ntak\Enums\NTAKCategory;
+use Kiralyta\Ntak\Enums\NTAKDayType;
+use Kiralyta\Ntak\Enums\NTAKOrderType;
+use Kiralyta\Ntak\Enums\NTAKPaymentType;
 use Kiralyta\Ntak\Models\NTAKOrder;
 
 class NTAK
@@ -31,16 +31,16 @@ class NTAK
      */
     public static function categories(): array
     {
-        return Category::values();
+        return NTAKCategory::values();
     }
 
     /**
      * Lists the subcategories of a category
      *
-     * @param  Category $category
+     * @param  NTAKCategory $category
      * @return array
      */
-    public static function subCategories(Category $category): array
+    public static function subCategories(NTAKCategory $category): array
     {
         return $category->subCategories();
     }
@@ -58,12 +58,12 @@ class NTAK
     }
 
     /**
-     * storeOrder
+     * handleOrder
      *
      * @param  NTAKOrder $ntakOrder
      * @return void
      */
-    public function storeOrder(
+    public function handleOrder(
         NTAKOrder $ntakOrder
     ): void {
         $message = [
@@ -71,61 +71,70 @@ class NTAK
                 [
                     'rendelesBesorolasa'           => $ntakOrder->orderType->name,
                     'rmsRendelesAzonosito'         => $ntakOrder->orderId,
-                    'hivatkozottRendelesOsszesito' => $ntakOrder->ntakOrderId,
+                    'hivatkozottRendelesOsszesito' => $ntakOrder->orderType === NTAKOrderType::NORMAL
+                        ? null
+                        : $ntakOrder->ntakOrderId,
                     'targynap'                     => $ntakOrder->end->format('Y-m-d'),
-                    'rendelesKezdete'              => $ntakOrder->start->toRfc3339String(true),
-                    'rendelesVege'                 => $ntakOrder->end->toRfc3339String(true),
+                    'rendelesKezdete'              => $ntakOrder->orderType === NTAKOrderType::STORNO
+                        ? null
+                        : $ntakOrder->start->toRfc3339String(true),
+                    'rendelesVege'                 => $ntakOrder->orderType === NTAKOrderType::STORNO
+                        ? null
+                        : $ntakOrder->end->toRfc3339String(true),
                     'helybenFogyasztott'           => $ntakOrder->isAtTheSpot,
                     'osszesitett'                  => false,
-                    'fizetésiInformációk'          => [
+                    'fizetésiInformációk'          => $ntakOrder->orderType === NTAKOrderType::STORNO
+                        ? null
+                        : [
                         'rendelesVegosszegeHUF' => $ntakOrder->total,
                         'fizetesiModok'         => [
                             [
                                 'fizetesiMod'       => $ntakOrder->paymentType->name,
-                                'fizetettOsszegHUF' => $ntakOrder->paymentType !== PaymentType::KESZPENZHUF
+                                'fizetettOsszegHUF' => $ntakOrder->paymentType !== NTAKPaymentType::KESZPENZHUF
                                     ? $ntakOrder->total
                                     : (int) round($ntakOrder->total / 5) * 5
                             ]
                         ]
                     ],
-
-                    // TODO
+                    'rendelesTetelek'              => $ntakOrder->orderType === NTAKOrderType::STORNO
+                        ? null
+                        : $ntakOrder->buildOrderItems(),
                 ]
             ],
         ];
 
-        $this->client->message($message, $this->when);
+        $this->client->message($message, $this->when, '/rms/rendeles-osszesito');
     }
 
     /**
      * closeDay
      *
-     * @param  Carbon  $start
-     * @param  Carbon  $end
-     * @param  DayType $dayType
-     * @param  int     $tips
+     * @param  Carbon      $start
+     * @param  Carbon      $end
+     * @param  NTAKDayType $dayType
+     * @param  int         $tips
      * @return void
      */
     public function closeDay(
-        ?Carbon $start,
-        ?Carbon $end,
-        DayType $dayType,
-        int $tips = 0
+        ?Carbon     $start,
+        ?Carbon     $end,
+        NTAKDayType $dayType,
+        int         $tips = 0
     ): void {
         $message = [
             'zarasiInformaciok' => [
                 'targynap'           => $start->format('Y-m-d'),
                 'targynapBesorolasa' => $dayType->name,
-                'nyitasIdopontja'    => $dayType !== DayType::ADOTT_NAPON_ZARVA
-                    ? $start->toRfc3339String()
+                'nyitasIdopontja'    => $dayType !== NTAKDayType::ADOTT_NAPON_ZARVA
+                    ? $start->toRfc3339String(true)
                     : null,
-                'zarasIdopontja'     => $dayType !== DayType::ADOTT_NAPON_ZARVA
-                    ? $end->toRfc3339String()
+                'zarasIdopontja'     => $dayType !== NTAKDayType::ADOTT_NAPON_ZARVA
+                    ? $end->toRfc3339String(true)
                     : null,
                 'osszesBorravalo'    => $tips,
             ],
         ];
 
-        $this->client->message($message, $this->when);
+        $this->client->message($message, $this->when, '/close');
     }
 }

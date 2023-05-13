@@ -2,7 +2,7 @@
 
 namespace Kiralyta\Ntak\Enums;
 
-enum OrderType: string
+enum NTAKOrderType: string
 {
     case NORMAL = 'Normál';
     case STORNO = 'Storno';

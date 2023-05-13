@@ -3,10 +3,13 @@
 namespace Kiralyta\Ntak;
 
 use Carbon\Carbon;
+use GuzzleHttp\Client;
 
 class NTAKClient
 {
+    protected Client $client;
     protected Carbon $when;
+    protected string $url = 'https://rms.ntaktst.hu';
 
     /**
      * __construct
@@ -15,6 +18,8 @@ class NTAKClient
      * @param  string $regNumber
      * @param  string $softwareRegNumber
      * @param  string $version
+     * @param  string $cert
+     * @param  string $key
      * @return void
      */
     public function __construct(
@@ -22,8 +27,16 @@ class NTAKClient
         protected string $regNumber,
         protected string $softwareRegNumber,
         protected string $version,
+        protected string $cert,
+        protected string $key
     ) {
-
+        $this->client = new Client([
+            'base_uri' => $this->url,
+            'headers'  => [
+                'x-jws-signature' => $key,
+                'x-certificate'   => base64_encode($cert),
+            ]
+        ]);
     }
 
     /**
@@ -31,20 +44,24 @@ class NTAKClient
      *
      * @param  array  $message
      * @param  Carbon $when
+     * @param  string $uri
      * @return void
      */
-    public function message(array $message, Carbon $when): void
+    public function message(array $message, Carbon $when, string $uri): void
     {
         $this->when = $when;
 
-        $body = array_merge(
+        $json = array_merge(
             $this->header(),
             $message
         );
 
-        dump($body);
-
         // Send request with guzzle
+        $this->client->request(
+            'post',
+            $uri,
+            compact('json')
+        );
     }
 
     /**
