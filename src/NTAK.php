@@ -135,6 +135,6 @@ class NTAK
             ],
         ];
 
-        $this->client->message($message, $this->when, '/close');
+        $this->client->message($message, $this->when, '/rms/napi-zaras');
     }
 }
