@@ -17,12 +17,11 @@ enum NTAKCategory: string
     /**
      * subCategories
      *
-     * @return array
+     * @return array|NTAKSubCategory[]
      */
     public function subCategories(): array
     {
-        return match($this)
-        {
+        return match($this) {
             NTAKCategory::ETEL => [
                 NTAKSubCategory::REGGELI,
                 NTAKSubCategory::SZENDVICS,
