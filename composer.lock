@@ -1056,16 +1056,16 @@
     "packages-dev": [
         {
             "name": "illuminate/collections",
-            "version": "v10.9.0",
+            "version": "v10.10.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/illuminate/collections.git",
-                "reference": "0404a7d44788a43115030d45e9b2c9e1e011d0eb"
+                "reference": "4f3810082e70780547c48d803c2d315e566df6a5"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/illuminate/collections/zipball/0404a7d44788a43115030d45e9b2c9e1e011d0eb",
-                "reference": "0404a7d44788a43115030d45e9b2c9e1e011d0eb",
+                "url": "https://api.github.com/repos/illuminate/collections/zipball/4f3810082e70780547c48d803c2d315e566df6a5",
+                "reference": "4f3810082e70780547c48d803c2d315e566df6a5",
                 "shasum": ""
             },
             "require": {
@@ -1107,11 +1107,11 @@
                 "issues": "https://github.com/laravel/framework/issues",
                 "source": "https://github.com/laravel/framework"
             },
-            "time": "2023-04-24T18:49:40+00:00"
+            "time": "2023-05-09T18:53:34+00:00"
         },
         {
             "name": "illuminate/conditionable",
-            "version": "v10.9.0",
+            "version": "v10.10.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/illuminate/conditionable.git",
@@ -1157,16 +1157,16 @@
         },
         {
             "name": "illuminate/contracts",
-            "version": "v10.9.0",
+            "version": "v10.10.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/illuminate/contracts.git",
-                "reference": "df6cb22937345609dbd42ef9f9cc62bf9f20104f"
+                "reference": "0f8b766d66df7e0784ea73cfe4caf7a48b623f53"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/illuminate/contracts/zipball/df6cb22937345609dbd42ef9f9cc62bf9f20104f",
-                "reference": "df6cb22937345609dbd42ef9f9cc62bf9f20104f",
+                "url": "https://api.github.com/repos/illuminate/contracts/zipball/0f8b766d66df7e0784ea73cfe4caf7a48b623f53",
+                "reference": "0f8b766d66df7e0784ea73cfe4caf7a48b623f53",
                 "shasum": ""
             },
             "require": {
@@ -1201,11 +1201,11 @@
                 "issues": "https://github.com/laravel/framework/issues",
                 "source": "https://github.com/laravel/framework"
             },
-            "time": "2023-04-17T16:01:53+00:00"
+            "time": "2023-05-01T15:41:14+00:00"
         },
         {
             "name": "illuminate/macroable",
-            "version": "v10.9.0",
+            "version": "v10.10.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/illuminate/macroable.git",
@@ -1555,16 +1555,16 @@
         },
         {
             "name": "phpunit/php-file-iterator",
-            "version": "4.0.1",
+            "version": "4.0.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/sebastianbergmann/php-file-iterator.git",
-                "reference": "fd9329ab3368f59fe1fe808a189c51086bd4b6bd"
+                "reference": "5647d65443818959172645e7ed999217360654b6"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sebastianbergmann/php-file-iterator/zipball/fd9329ab3368f59fe1fe808a189c51086bd4b6bd",
-                "reference": "fd9329ab3368f59fe1fe808a189c51086bd4b6bd",
+                "url": "https://api.github.com/repos/sebastianbergmann/php-file-iterator/zipball/5647d65443818959172645e7ed999217360654b6",
+                "reference": "5647d65443818959172645e7ed999217360654b6",
                 "shasum": ""
             },
             "require": {
@@ -1603,7 +1603,8 @@
             ],
             "support": {
                 "issues": "https://github.com/sebastianbergmann/php-file-iterator/issues",
-                "source": "https://github.com/sebastianbergmann/php-file-iterator/tree/4.0.1"
+                "security": "https://github.com/sebastianbergmann/php-file-iterator/security/policy",
+                "source": "https://github.com/sebastianbergmann/php-file-iterator/tree/4.0.2"
             },
             "funding": [
                 {
@@ -1611,7 +1612,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2023-02-10T16:53:14+00:00"
+            "time": "2023-05-07T09:13:23+00:00"
         },
         {
             "name": "phpunit/php-invoker",
@@ -1796,16 +1797,16 @@
         },
         {
             "name": "phpunit/phpunit",
-            "version": "10.1.2",
+            "version": "10.1.3",
             "source": {
                 "type": "git",
                 "url": "https://github.com/sebastianbergmann/phpunit.git",
-                "reference": "6f0cd95be71add539f8fd2be25b2a4a29789000b"
+                "reference": "2379ebafc1737e71cdc84f402acb6b7f04198b9d"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sebastianbergmann/phpunit/zipball/6f0cd95be71add539f8fd2be25b2a4a29789000b",
-                "reference": "6f0cd95be71add539f8fd2be25b2a4a29789000b",
+                "url": "https://api.github.com/repos/sebastianbergmann/phpunit/zipball/2379ebafc1737e71cdc84f402acb6b7f04198b9d",
+                "reference": "2379ebafc1737e71cdc84f402acb6b7f04198b9d",
                 "shasum": ""
             },
             "require": {
@@ -1877,7 +1878,7 @@
             "support": {
                 "issues": "https://github.com/sebastianbergmann/phpunit/issues",
                 "security": "https://github.com/sebastianbergmann/phpunit/security/policy",
-                "source": "https://github.com/sebastianbergmann/phpunit/tree/10.1.2"
+                "source": "https://github.com/sebastianbergmann/phpunit/tree/10.1.3"
             },
             "funding": [
                 {
@@ -1893,7 +1894,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2023-04-22T07:38:19+00:00"
+            "time": "2023-05-11T05:16:22+00:00"
         },
         {
             "name": "psr/container",

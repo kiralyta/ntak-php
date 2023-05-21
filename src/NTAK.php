@@ -60,47 +60,49 @@ class NTAK
     /**
      * handleOrder
      *
-     * @param  NTAKOrder $ntakOrder
+     * @param  NTAKOrder $ntakOrders
      * @return void
      */
-    public function handleOrder(
-        NTAKOrder $ntakOrder
-    ): void {
-        $message = [
-            'rendelesOsszesitok' => [
-                [
-                    'rendelesBesorolasa'           => $ntakOrder->orderType->name,
-                    'rmsRendelesAzonosito'         => $ntakOrder->orderId,
-                    'hivatkozottRendelesOsszesito' => $ntakOrder->orderType === NTAKOrderType::NORMAL
-                        ? null
-                        : $ntakOrder->ntakOrderId,
-                    'targynap'                     => $ntakOrder->end->format('Y-m-d'),
-                    'rendelesKezdete'              => $ntakOrder->orderType === NTAKOrderType::STORNO
-                        ? null
-                        : $ntakOrder->start->toRfc3339String(true),
-                    'rendelesVege'                 => $ntakOrder->orderType === NTAKOrderType::STORNO
-                        ? null
-                        : $ntakOrder->end->toRfc3339String(true),
-                    'helybenFogyasztott'           => $ntakOrder->isAtTheSpot,
-                    'osszesitett'                  => false,
-                    'fizetésiInformációk'          => $ntakOrder->orderType === NTAKOrderType::STORNO
-                        ? null
-                        : [
-                        'rendelesVegosszegeHUF' => $ntakOrder->total,
-                        'fizetesiModok'         => [
-                            [
-                                'fizetesiMod'       => $ntakOrder->paymentType->name,
-                                'fizetettOsszegHUF' => $ntakOrder->paymentType !== NTAKPaymentType::KESZPENZHUF
-                                    ? $ntakOrder->total
-                                    : (int) round($ntakOrder->total / 5) * 5
-                            ]
+    public function handleOrder(NTAKOrder ...$ntakOrders): void
+    {
+        $orders = [];
+        foreach ($ntakOrders as $ntakOrder) {
+            $orders[] = [
+                'rendelesBesorolasa'           => $ntakOrder->orderType->name,
+                'rmsRendelesAzonosito'         => $ntakOrder->orderId,
+                'hivatkozottRendelesOsszesito' => $ntakOrder->orderType === NTAKOrderType::NORMAL
+                    ? null
+                    : $ntakOrder->ntakOrderId,
+                'targynap'                     => $ntakOrder->end->format('Y-m-d'),
+                'rendelesKezdete'              => $ntakOrder->orderType === NTAKOrderType::STORNO
+                    ? null
+                    : $ntakOrder->start->toRfc3339String(true),
+                'rendelesVege'                 => $ntakOrder->orderType === NTAKOrderType::STORNO
+                    ? null
+                    : $ntakOrder->end->toRfc3339String(true),
+                'helybenFogyasztott'           => $ntakOrder->isAtTheSpot,
+                'osszesitett'                  => false,
+                'fizetésiInformációk'          => $ntakOrder->orderType === NTAKOrderType::STORNO
+                    ? null
+                    : [
+                    'rendelesVegosszegeHUF' => $ntakOrder->total,
+                    'fizetesiModok'         => [
+                        [
+                            'fizetesiMod'       => $ntakOrder->paymentType->name,
+                            'fizetettOsszegHUF' => $ntakOrder->paymentType !== NTAKPaymentType::KESZPENZHUF
+                                ? $ntakOrder->total
+                                : (int) round($ntakOrder->total / 5) * 5
                         ]
-                    ],
-                    'rendelesTetelek'              => $ntakOrder->orderType === NTAKOrderType::STORNO
-                        ? null
-                        : $ntakOrder->buildOrderItems(),
-                ]
-            ],
+                    ]
+                ],
+                'rendelesTetelek'              => $ntakOrder->orderType === NTAKOrderType::STORNO
+                    ? null
+                    : $ntakOrder->buildOrderItems(),
+            ];
+        }
+
+        $message = [
+            'rendelesOsszesitok' => $orders,
         ];
 
         $this->client->message($message, $this->when, '/rms/rendeles-osszesito');
@@ -132,6 +134,26 @@ class NTAK
                     ? $end->toRfc3339String(true)
                     : null,
                 'osszesBorravalo'    => $tips,
+            ],
+        ];
+
+        $this->client->message($message, $this->when, '/rms/napi-zaras');
+    }
+
+    /**
+     * verify
+     *
+     * @param  string $processingId
+     * @return void
+     */
+    public function verify(
+        string $processingId
+    ): void {
+        $message = [
+            'feldolgozasAzonositok' => [
+                [
+                    'feldolgozasAzonosito' => $processingId,
+                ]
             ],
         ];
 

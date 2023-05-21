@@ -32,10 +32,11 @@ class NTAKOrderItem
         public readonly NTAKVat         $vat,
         public readonly int             $price,
         public readonly NTAKAmount      $amountType,
-        public readonly float             $amount,
+        public readonly float           $amount,
         public readonly int             $quantity,
         public readonly Carbon          $when
-    ) { }
+    ) {
+    }
 
     /**
      * buildRequest
