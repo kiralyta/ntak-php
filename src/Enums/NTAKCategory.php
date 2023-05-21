@@ -15,64 +15,64 @@ enum NTAKCategory: string
     case EGYEB = 'Egyéb';
 
     /**
-     * subCategories
+     * subcategories
      *
-     * @return array|NTAKSubCategory[]
+     * @return array|NTAKSubcategory[]
      */
-    public function subCategories(): array
+    public function subcategories(): array
     {
         return match($this) {
             NTAKCategory::ETEL => [
-                NTAKSubCategory::REGGELI,
-                NTAKSubCategory::SZENDVICS,
-                NTAKSubCategory::ELOETEL,
-                NTAKSubCategory::LEVES,
-                NTAKSubCategory::FOETEL,
-                NTAKSubCategory::KORET,
-                NTAKSubCategory::SAVANYUSAG_SALATA,
-                NTAKSubCategory::KOSTOLO,
-                NTAKSubCategory::PEKSUTEMENY,
-                NTAKSubCategory::DESSZERT,
-                NTAKSubCategory::SNACK,
-                NTAKSubCategory::FOETEL_KORETTEL,
-                NTAKSubCategory::ETELCSOMAG,
-                NTAKSubCategory::EGYEB,
+                NTAKSubcategory::REGGELI,
+                NTAKSubcategory::SZENDVICS,
+                NTAKSubcategory::ELOETEL,
+                NTAKSubcategory::LEVES,
+                NTAKSubcategory::FOETEL,
+                NTAKSubcategory::KORET,
+                NTAKSubcategory::SAVANYUSAG_SALATA,
+                NTAKSubcategory::KOSTOLO,
+                NTAKSubcategory::PEKSUTEMENY,
+                NTAKSubcategory::DESSZERT,
+                NTAKSubcategory::SNACK,
+                NTAKSubcategory::FOETEL_KORETTEL,
+                NTAKSubcategory::ETELCSOMAG,
+                NTAKSubcategory::EGYEB,
             ],
             NTAKCategory::ALKMENTESITAL_HELYBEN => [
-                NTAKSubCategory::VIZ,
-                NTAKSubCategory::LIMONADE_SZORP_FACSART,
-                NTAKSubCategory::ALKOHOLMENTES_KOKTEL,
-                NTAKSubCategory::TEA_FORROCSOKOLADE,
-                NTAKSubCategory::ITALCSOMAG,
-                NTAKSubCategory::KAVE,
+                NTAKSubcategory::VIZ,
+                NTAKSubcategory::LIMONADE_SZORP_FACSART,
+                NTAKSubcategory::ALKOHOLMENTES_KOKTEL,
+                NTAKSubcategory::TEA_FORROCSOKOLADE,
+                NTAKSubcategory::ITALCSOMAG,
+                NTAKSubcategory::KAVE,
             ],
             NTAKCategory::ALKMENTESITAL_NEM_HELYBEN => [
-                NTAKSubCategory::VIZ,
-                NTAKSubCategory::ROSTOS_UDITO,
-                NTAKSubCategory::SZENSAVAS_UDITO,
-                NTAKSubCategory::SZENSAVMENTES_UDITO,
-                NTAKSubCategory::SZENSAVAS_UDITO,
-                NTAKSubCategory::SZENSAVMENTES_UDITO,
-                NTAKSubCategory::ITALCSOMAG,
+                NTAKSubcategory::VIZ,
+                NTAKSubcategory::ROSTOS_UDITO,
+                NTAKSubcategory::SZENSAVAS_UDITO,
+                NTAKSubcategory::SZENSAVMENTES_UDITO,
+                NTAKSubcategory::SZENSAVAS_UDITO,
+                NTAKSubcategory::SZENSAVMENTES_UDITO,
+                NTAKSubcategory::ITALCSOMAG,
             ],
             NTAKCategory::ALKOHOLOSITAL => [
-                NTAKSubCategory::KOKTEL,
-                NTAKSubCategory::LIKOR,
-                NTAKSubCategory::PARLAT,
-                NTAKSubCategory::SOR,
-                NTAKSubCategory::BOR,
-                NTAKSubCategory::PEZSGO,
-                NTAKSubCategory::ITALCSOMAG,
+                NTAKSubcategory::KOKTEL,
+                NTAKSubcategory::LIKOR,
+                NTAKSubcategory::PARLAT,
+                NTAKSubcategory::SOR,
+                NTAKSubcategory::BOR,
+                NTAKSubcategory::PEZSGO,
+                NTAKSubcategory::ITALCSOMAG,
             ],
             NTAKCategory::EGYEB => [
-                NTAKSubCategory::EGYEB,
-                NTAKSubCategory::SZERVIZDIJ,
-                NTAKSubCategory::BORRAVALO,
-                NTAKSubCategory::KISZALLITASI_DIJ,
-                NTAKSubCategory::NEM_VENDEGLATAS,
-                NTAKSubCategory::KORNYEZETBARAT_CSOMAGOLAS,
-                NTAKSubCategory::MUANYAG_CSOMAGOLAS,
-                NTAKSubCategory::KEDVEZMENY,
+                NTAKSubcategory::EGYEB,
+                NTAKSubcategory::SZERVIZDIJ,
+                NTAKSubcategory::BORRAVALO,
+                NTAKSubcategory::KISZALLITASI_DIJ,
+                NTAKSubcategory::NEM_VENDEGLATAS,
+                NTAKSubcategory::KORNYEZETBARAT_CSOMAGOLAS,
+                NTAKSubcategory::MUANYAG_CSOMAGOLAS,
+                NTAKSubcategory::KEDVEZMENY,
             ]
         };
     }

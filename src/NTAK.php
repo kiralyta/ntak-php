@@ -7,7 +7,7 @@ use Kiralyta\Ntak\Enums\NTAKCategory;
 use Kiralyta\Ntak\Enums\NTAKDayType;
 use Kiralyta\Ntak\Enums\NTAKOrderType;
 use Kiralyta\Ntak\Enums\NTAKPaymentType;
-use Kiralyta\Ntak\Enums\NTAKSubCategory;
+use Kiralyta\Ntak\Enums\NTAKSubcategory;
 use Kiralyta\Ntak\Models\NTAKOrder;
 
 class NTAK
@@ -39,11 +39,11 @@ class NTAK
      * Lists the subcategories of a category
      *
      * @param  NTAKCategory $category
-     * @return array|NTAKSubCategory[]
+     * @return array|NTAKSubcategory[]
      */
-    public static function subCategories(NTAKCategory $category): array
+    public static function subcategories(NTAKCategory $category): array
     {
-        return $category->subCategories();
+        return $category->subcategories();
     }
 
     /**

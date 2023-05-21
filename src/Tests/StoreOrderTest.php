@@ -7,7 +7,7 @@ use Kiralyta\Ntak\Enums\NTAKAmount;
 use Kiralyta\Ntak\Enums\NTAKCategory;
 use Kiralyta\Ntak\Enums\NTAKOrderType;
 use Kiralyta\Ntak\Enums\NTAKPaymentType;
-use Kiralyta\Ntak\Enums\NTAKSubCategory;
+use Kiralyta\Ntak\Enums\NTAKSubcategory;
 use Kiralyta\Ntak\Enums\NTAKVat;
 use Kiralyta\Ntak\Models\NTAKOrder;
 use Kiralyta\Ntak\Models\NTAKOrderItem;
@@ -28,7 +28,7 @@ class StoreOrderTest extends TestCase
             new NTAKOrderItem(
                 name: 'Absolut vodka',
                 category: NTAKCategory::ALKOHOLOSITAL,
-                subCategory: NTAKSubCategory::PARLAT,
+                subcategory: NTAKSubcategory::PARLAT,
                 vat: NTAKVat::C_27,
                 price: 1000,
                 amountType: NTAKAmount::LITER,
@@ -39,7 +39,7 @@ class StoreOrderTest extends TestCase
             new NTAKOrderItem(
                 name: 'Túró rudi',
                 category: NTAKCategory::ETEL,
-                subCategory: NTAKSubCategory::SNACK,
+                subcategory: NTAKSubcategory::SNACK,
                 vat: NTAKVat::C_27,
                 price: 1000,
                 amountType: NTAKAmount::DARAB,

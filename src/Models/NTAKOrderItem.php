@@ -5,7 +5,7 @@ namespace Kiralyta\Ntak\Models;
 use Carbon\Carbon;
 use Kiralyta\Ntak\Enums\NTAKAmount;
 use Kiralyta\Ntak\Enums\NTAKCategory;
-use Kiralyta\Ntak\Enums\NTAKSubCategory;
+use Kiralyta\Ntak\Enums\NTAKSubcategory;
 use Kiralyta\Ntak\Enums\NTAKVat;
 
 class NTAKOrderItem
@@ -15,7 +15,7 @@ class NTAKOrderItem
      *
      * @param string $name
      * @param NTAKCategory    $category
-     * @param NTAKSubCategory $subCategory
+     * @param NTAKSubcategory $subcategory
      * @param NTAKVat         $vat
      * @param float           $price
      * @param NTAKAmount      $amountType
@@ -28,7 +28,7 @@ class NTAKOrderItem
     public function __construct(
         public readonly string          $name,
         public readonly NTAKCategory    $category,
-        public readonly NTAKSubCategory $subCategory,
+        public readonly NTAKSubcategory $subcategory,
         public readonly NTAKVat         $vat,
         public readonly int             $price,
         public readonly NTAKAmount      $amountType,
@@ -48,7 +48,7 @@ class NTAKOrderItem
         return [
             'megnevezes'        => $this->name,
             'fokategoria'       => $this->category->name,
-            'alkategoria'       => $this->subCategory->name,
+            'alkategoria'       => $this->subcategory->name,
             'afaKategoria'      => $this->vat->name,
             'bruttoEgysegar'    => $this->price,
             'mennyisegiEgyseg'  => $this->amountType->name,
