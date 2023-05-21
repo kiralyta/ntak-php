@@ -76,4 +76,23 @@ enum NTAKCategory: string
             ]
         };
     }
+
+    /**
+     * hasSubcategory
+     *
+     * @param  NTAKSubcategory $subcategory
+     * @return bool
+     */
+    public function hasSubcategory(NTAKSubcategory $subcategory): bool
+    {
+        $subcategories = $this->subcategories();
+
+        foreach ($subcategories as $validSubcategory) {
+            if ($validSubcategory === $subcategory) {
+                return true;
+            }
+        }
+
+        return false;
+    }
 }
