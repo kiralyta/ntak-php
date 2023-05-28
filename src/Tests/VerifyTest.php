@@ -3,19 +3,18 @@
 namespace Kiralyta\Ntak\Tests;
 
 use Carbon\Carbon;
-use Kiralyta\Ntak\Enums\NTAKDayType;
 use Kiralyta\Ntak\NTAK;
 use Kiralyta\Ntak\NTAKClient;
 use Kiralyta\Ntak\TestCase;
 
-class CloseDayTest extends TestCase
+class VerifyTest extends TestCase
 {
     /**
-     * test_close_day
+     * test_verify
      *
      * @return void
      */
-    public function test_close_day(): void
+    public function test_verify(): void
     {
         $response = NTAK::message(
             $client = new NTAKClient(
@@ -28,13 +27,9 @@ class CloseDayTest extends TestCase
                 true
             ),
             Carbon::now()
-        )->closeDay(
-            Carbon::now()->addHours(-8),
-            Carbon::now()->addMinutes(-2),
-            NTAKDayType::NORMAL_NAP
-        );
+        )->verify('cfb3197a-a70d-4ba0-8de1-c1e6306c9fe8');
 
-        $this->assertIsString($response);
+        $this->assertIsArray($response);
         $this->assertIsArray($client->lastRequest());
         $this->assertIsArray($client->lastResponse());
     }

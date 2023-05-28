@@ -6,7 +6,6 @@ use Carbon\Carbon;
 use Kiralyta\Ntak\Enums\NTAKCategory;
 use Kiralyta\Ntak\Enums\NTAKDayType;
 use Kiralyta\Ntak\Enums\NTAKOrderType;
-use Kiralyta\Ntak\Enums\NTAKPaymentType;
 use Kiralyta\Ntak\Enums\NTAKSubcategory;
 use Kiralyta\Ntak\Models\NTAKOrder;
 
@@ -20,8 +19,8 @@ class NTAK
      * @return void
      */
     public function __construct(
-        protected NTAKClient $client,
-        protected Carbon $when
+        public readonly NTAKClient $client,
+        protected       Carbon $when
     ) {
     }
 
@@ -62,9 +61,9 @@ class NTAK
      * handleOrder
      *
      * @param  NTAKOrder $ntakOrders
-     * @return void
+     * @return string
      */
-    public function handleOrder(NTAKOrder ...$ntakOrders): void
+    public function handleOrder(NTAKOrder ...$ntakOrders): string
     {
         $orders = [];
         foreach ($ntakOrders as $ntakOrder) {
@@ -77,25 +76,18 @@ class NTAK
                 'targynap'                     => $ntakOrder->end->format('Y-m-d'),
                 'rendelesKezdete'              => $ntakOrder->orderType === NTAKOrderType::STORNO
                     ? null
-                    : $ntakOrder->start->toRfc3339String(true),
+                    : $ntakOrder->start->timezone('Europe/Budapest')->toIso8601String(),
                 'rendelesVege'                 => $ntakOrder->orderType === NTAKOrderType::STORNO
                     ? null
-                    : $ntakOrder->end->toRfc3339String(true),
+                    : $ntakOrder->end->timezone('Europe/Budapest')->toIso8601String(),
                 'helybenFogyasztott'           => $ntakOrder->isAtTheSpot,
                 'osszesitett'                  => false,
-                'fizetésiInformációk'          => $ntakOrder->orderType === NTAKOrderType::STORNO
+                'fizetesiInformaciok'          => $ntakOrder->orderType === NTAKOrderType::STORNO
                     ? null
                     : [
-                    'rendelesVegosszegeHUF' => $ntakOrder->total,
-                    'fizetesiModok'         => [
-                        [
-                            'fizetesiMod'       => $ntakOrder->paymentType->name,
-                            'fizetettOsszegHUF' => $ntakOrder->paymentType !== NTAKPaymentType::KESZPENZHUF
-                                ? $ntakOrder->total
-                                : (int) round($ntakOrder->total / 5) * 5
-                        ]
-                    ]
-                ],
+                        'rendelesVegosszegeHUF' => $ntakOrder->total(),
+                        'fizetesiModok'         => $ntakOrder->buildPaymentTypes(),
+                    ],
                 'rendelesTetelek'              => $ntakOrder->orderType === NTAKOrderType::STORNO
                     ? null
                     : $ntakOrder->buildOrderItems(),
@@ -106,7 +98,11 @@ class NTAK
             'rendelesOsszesitok' => $orders,
         ];
 
-        $this->client->message($message, $this->when, '/rms/rendeles-osszesito');
+        return $this->client->message(
+            $message,
+            $this->when,
+            '/rms/rendeles-osszesito'
+        )['feldolgozasAzonosito'];
     }
 
     /**
@@ -116,48 +112,56 @@ class NTAK
      * @param  Carbon      $end
      * @param  NTAKDayType $dayType
      * @param  int         $tips
-     * @return void
+     * @return string
      */
     public function closeDay(
         ?Carbon     $start,
         ?Carbon     $end,
         NTAKDayType $dayType,
         int         $tips = 0
-    ): void {
+    ): string {
         $message = [
             'zarasiInformaciok' => [
                 'targynap'           => $start->format('Y-m-d'),
                 'targynapBesorolasa' => $dayType->name,
                 'nyitasIdopontja'    => $dayType !== NTAKDayType::ADOTT_NAPON_ZARVA
-                    ? $start->toRfc3339String(true)
+                    ? $start->timezone('Europe/Budapest')->toIso8601String()
                     : null,
                 'zarasIdopontja'     => $dayType !== NTAKDayType::ADOTT_NAPON_ZARVA
-                    ? $end->toRfc3339String(true)
+                    ? $end->timezone('Europe/Budapest')->toIso8601String()
                     : null,
                 'osszesBorravalo'    => $tips,
             ],
         ];
 
-        $this->client->message($message, $this->when, '/rms/napi-zaras');
+        return $this->client->message(
+            $message,
+            $this->when,
+            '/rms/napi-zaras'
+        )['feldolgozasAzonosito'];
     }
 
     /**
      * verify
      *
-     * @param  string $processingId
-     * @return void
+     * @param  string $processId
+     * @return array
      */
     public function verify(
-        string $processingId
-    ): void {
+        string $processId
+    ): array {
         $message = [
             'feldolgozasAzonositok' => [
                 [
-                    'feldolgozasAzonosito' => $processingId,
+                    'feldolgozasAzonosito' => $processId,
                 ]
             ],
         ];
 
-        $this->client->message($message, $this->when, '/rms/napi-zaras');
+        return $this->client->message(
+            $message,
+            $this->when,
+            '/rms/napi-zaras'
+        )['uzenetValaszok'][0];
     }
 }

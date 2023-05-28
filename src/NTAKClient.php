@@ -5,12 +5,16 @@ namespace Kiralyta\Ntak;
 use Carbon\Carbon;
 use Gamegos\JWS\JWS;
 use GuzzleHttp\Client;
+use GuzzleHttp\Exception\ClientException;
+use Kiralyta\Ntak\Exceptions\NTAKClientException;
 
 class NTAKClient
 {
     protected Client $client;
     protected Carbon $when;
     protected string $url = 'https://rms.tesztntak.hu';
+    protected array $lastRequest;
+    protected array $lastResponse;
 
     /**
      * __construct
@@ -65,15 +69,22 @@ class NTAKClient
         $headers = $this->requestHeaders($json);
 
         // Send request with guzzle
-        $response = $this->client->request(
-            'post',
-            $uri,
-            compact('json', 'headers')
-        );
+        try {
+            $this->lastRequest = $json;
+            dump($json);
 
-        dump($response);
+            $response = $this->client->request(
+                'post',
+                $uri,
+                compact('json', 'headers')
+            );
+        } catch (ClientException $e) {
+            throw new NTAKClientException(
+                $e->getResponse()->getBody()->getContents()
+            );
+        }
 
-        return json_decode($response->getBody(), true) ?? [];
+        return $this->lastResponse = json_decode($response->getBody(), true) ?? [];
     }
 
     /**
@@ -97,7 +108,7 @@ class NTAKClient
 
         return [
             'x-jws-signature' => $tmp[0].'..'.$tmp[2],
-            'x-certificate' => base64_encode(file_get_contents($this->certPath))
+            'x-certificate'   => base64_encode(file_get_contents($this->certPath))
         ];
     }
 
@@ -114,12 +125,32 @@ class NTAKClient
                 'vendeglatoUzletRegSzam' => $this->regNumber,
             ],
             'uzenetAdatok'        => [
-                'uzenetKuldesIdeje' => $this->when->toIso8601String(),
+                'uzenetKuldesIdeje' => $this->when->timezone('Europe/Budapest')->toIso8601String(),
             ],
             'kuldoRendszerAdatok' => [
                 'rmsRendszerNTAKAzonosito' => $this->softwareRegNumber,
                 'rmsRendszerVerzioszam'    => $this->version,
             ]
         ];
+    }
+
+    /**
+     * lastRequest getter
+     *
+     * @return array|null
+     */
+    public function lastRequest(): ?array
+    {
+        return $this->lastRequest;
+    }
+
+    /**
+     * lastResponse getter
+     *
+     * @return array
+     */
+    public function lastResponse(): ?array
+    {
+        return $this->lastResponse;
     }
 }

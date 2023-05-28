@@ -54,7 +54,7 @@ class NTAKOrderItem
             'mennyisegiEgyseg'  => $this->amountType->name,
             'mennyiseg'         => $this->amount,
             'tetelszam'         => $this->quantity,
-            'rendelesIdopontja' => $this->when->toRfc3339String(true),
+            'rendelesIdopontja' => $this->when->timezone('Europe/Budapest')->toIso8601String(),
             'tetelOsszesito'    => $this->quantity * $this->price,
         ];
     }

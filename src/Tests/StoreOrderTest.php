@@ -11,9 +11,11 @@ use Kiralyta\Ntak\Enums\NTAKSubcategory;
 use Kiralyta\Ntak\Enums\NTAKVat;
 use Kiralyta\Ntak\Models\NTAKOrder;
 use Kiralyta\Ntak\Models\NTAKOrderItem;
+use Kiralyta\Ntak\Models\NTAKPayment;
 use Kiralyta\Ntak\NTAK;
 use Kiralyta\Ntak\NTAKClient;
 use Kiralyta\Ntak\TestCase;
+use Ramsey\Uuid\Uuid;
 
 class StoreOrderTest extends TestCase
 {
@@ -24,6 +26,8 @@ class StoreOrderTest extends TestCase
      */
     public function test_store_order(): void
     {
+        $when = Carbon::now()->addMinutes(-1);
+
         $orderItems = [
             new NTAKOrderItem(
                 name: 'Absolut vodka',
@@ -34,23 +38,23 @@ class StoreOrderTest extends TestCase
                 amountType: NTAKAmount::LITER,
                 amount: 0.04,
                 quantity: 2,
-                when: Carbon::now()
+                when: $when
             ),
             new NTAKOrderItem(
                 name: 'Túró rudi',
                 category: NTAKCategory::ETEL,
                 subcategory: NTAKSubcategory::SNACK,
                 vat: NTAKVat::C_27,
-                price: 1000,
+                price: 1001,
                 amountType: NTAKAmount::DARAB,
                 amount: 1,
                 quantity: 2,
-                when: Carbon::now()
+                when: $when
             )
         ];
 
-        NTAK::message(
-            new NTAKClient(
+        $response = NTAK::message(
+            $client = new NTAKClient(
                 $this->taxNumber,
                 $this->regNumber,
                 $this->softwareRegNumber,
@@ -63,15 +67,21 @@ class StoreOrderTest extends TestCase
         )->handleOrder(
             new NTAKOrder(
                 orderType: NTAKOrderType::NORMAL,
-                orderId: random_int(1000, 210204),
+                orderId: Uuid::uuid4(),
                 orderItems: $orderItems,
-                start: Carbon::now()->addMinutes(-3),
-                end: Carbon::now()->addMinutes(-1),
-                total: 1954,
-                paymentType: NTAKPaymentType::KESZPENZHUF
+                start: $when->copy()->addMinutes(-7),
+                end: $when,
+                payments: [
+                    new NTAKPayment(
+                        NTAKPaymentType::KESZPENZHUF,
+                        4002
+                    )
+                ]
             )
         );
 
-        $this->assertTrue(true);
+        $this->assertIsString($response);
+        $this->assertIsArray($client->lastRequest());
+        $this->assertIsArray($client->lastResponse());
     }
 }
