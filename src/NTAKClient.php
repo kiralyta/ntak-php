@@ -71,7 +71,6 @@ class NTAKClient
         // Send request with guzzle
         try {
             $this->lastRequest = $json;
-            dump($json);
 
             $response = $this->client->request(
                 'post',
