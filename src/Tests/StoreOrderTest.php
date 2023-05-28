@@ -13,7 +13,7 @@ use Kiralyta\Ntak\Models\NTAKOrder;
 use Kiralyta\Ntak\Models\NTAKOrderItem;
 use Kiralyta\Ntak\NTAK;
 use Kiralyta\Ntak\NTAKClient;
-use PHPUnit\Framework\TestCase;
+use Kiralyta\Ntak\TestCase;
 
 class StoreOrderTest extends TestCase
 {
@@ -50,7 +50,15 @@ class StoreOrderTest extends TestCase
         ];
 
         NTAK::message(
-            new NTAKClient('3453234-32-4', 'RMX43', 'TabTenderYohh', '1.4.17', 'a', 'b'),
+            new NTAKClient(
+                $this->taxNumber,
+                $this->regNumber,
+                $this->softwareRegNumber,
+                $this->version,
+                $this->certPath,
+                $this->keyPath,
+                true
+            ),
             Carbon::now()
         )->handleOrder(
             new NTAKOrder(

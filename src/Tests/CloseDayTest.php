@@ -6,7 +6,7 @@ use Carbon\Carbon;
 use Kiralyta\Ntak\Enums\NTAKDayType;
 use Kiralyta\Ntak\NTAK;
 use Kiralyta\Ntak\NTAKClient;
-use PHPUnit\Framework\TestCase;
+use Kiralyta\Ntak\TestCase;
 
 class CloseDayTest extends TestCase
 {
@@ -18,7 +18,15 @@ class CloseDayTest extends TestCase
     public function test_close_day(): void
     {
         NTAK::message(
-            new NTAKClient('3453234-32-4', 'RMX43', 'TabTenderYohh', '1.4.17', 'a', 'b'),
+            new NTAKClient(
+                $this->taxNumber,
+                $this->regNumber,
+                $this->softwareRegNumber,
+                $this->version,
+                $this->certPath,
+                $this->keyPath,
+                true
+            ),
             Carbon::now()
         )->closeDay(
             Carbon::now()->addHours(-8),

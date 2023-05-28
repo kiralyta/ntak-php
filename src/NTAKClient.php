@@ -3,13 +3,14 @@
 namespace Kiralyta\Ntak;
 
 use Carbon\Carbon;
+use Gamegos\JWS\JWS;
 use GuzzleHttp\Client;
 
 class NTAKClient
 {
     protected Client $client;
     protected Carbon $when;
-    protected string $url = 'https://rms.ntaktst.hu';
+    protected string $url = 'https://rms.tesztntak.hu';
 
     /**
      * __construct
@@ -18,8 +19,9 @@ class NTAKClient
      * @param  string $regNumber
      * @param  string $softwareRegNumber
      * @param  string $version
-     * @param  string $cert
-     * @param  string $key
+     * @param  string $certPath
+     * @param  string $keyPath
+     * @param  bool   $testing
      * @return void
      */
     public function __construct(
@@ -27,15 +29,19 @@ class NTAKClient
         protected string $regNumber,
         protected string $softwareRegNumber,
         protected string $version,
-        protected string $cert,
-        protected string $key
+        protected string $certPath,
+        protected string $keyPath,
+        protected bool   $testing = false
     ) {
+        if (! $testing) {
+            $this->url = 'https://rms.ntaktst.hu';
+        }
+
         $this->client = new Client([
             'base_uri' => $this->url,
-            'headers'  => [
-                'x-jws-signature' => $key,
-                'x-certificate'   => base64_encode($cert),
-            ]
+            'cert'     => $certPath,
+            'ssl_key'  => $keyPath,
+            'verify'   => false,
         ]);
     }
 
@@ -45,9 +51,9 @@ class NTAKClient
      * @param  array  $message
      * @param  Carbon $when
      * @param  string $uri
-     * @return void
+     * @return array
      */
-    public function message(array $message, Carbon $when, string $uri): void
+    public function message(array $message, Carbon $when, string $uri): array
     {
         $this->when = $when;
 
@@ -56,12 +62,43 @@ class NTAKClient
             $message
         );
 
+        $headers = $this->requestHeaders($json);
+
         // Send request with guzzle
-        $this->client->request(
+        $response = $this->client->request(
             'post',
             $uri,
-            compact('json')
+            compact('json', 'headers')
         );
+
+        dump($response);
+
+        return json_decode($response->getBody(), true) ?? [];
+    }
+
+    /**
+     * requestHeaders
+     *
+     * @param  array $message
+     * @return array
+     */
+    protected function requestHeaders(array $message): array
+    {
+        $jws = (new JWS())->encode(
+            [
+                'alg' => 'RS256',
+                'typ' => 'JWS'
+            ],
+            $message,
+            file_get_contents($this->keyPath)
+        );
+
+        $tmp = explode('.', $jws);
+
+        return [
+            'x-jws-signature' => $tmp[0].'..'.$tmp[2],
+            'x-certificate' => base64_encode(file_get_contents($this->certPath))
+        ];
     }
 
     /**
