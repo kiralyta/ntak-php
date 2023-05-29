@@ -37,7 +37,7 @@ $client = new NTAKClient(
     sofwareReqNumber: 'NTAK RMS registration id',
     version:          'NTAK RMS version',
     certPath:         '/path/to/your.cer',
-    keyPath:          'path/to/your.pem',
+    keyPath:          '/path/to/your.pem',
     testing:          false                         // whether to hit the test NTAK API
 );
 ```
@@ -45,6 +45,14 @@ $client = new NTAKClient(
 > Your ```.pem``` file is basically a concatenated file of your ```.cer``` and ```.key``` files.
 >
 > It is recommended to have a singleton ```NTAKClient``` instance during one request cycle. This means, you can create multiple requests with a single ```NTAKClient``` instance.
+
+You can get the last request, response and respone time (in milliseconds) from the client.
+
+``` php
+$client->lastRequest();     // Returns an array
+$client->lastResponse();    // Returns an array
+$client->lastRequestTime(); // Returns an integer
+```
 
 #### Create an Order Item Instance
 
@@ -158,7 +166,7 @@ use Kiralyta\Ntak\NTAK;
 
 $response = NTAK::message($client, Carbon::now())
     ->verify(
-        process-id: 'NTAK Process ID'
+        process_id: 'NTAK Process ID'
     );
 ```
 
