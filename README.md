@@ -9,8 +9,7 @@ Table of Contents:
     - [Create an Order Item Instance](#create-an-order-item-instance)
     - [Create a Payment Instance](#create-a-payment-instance)
     - [Create an Order Instance](#create-an-order-instance)
-- [Messages (Requests)](#messages-requests)
-    - [Store Update Destroy Order (Rendelésösszesítő)](#store-update-destroy-order-rendelésösszesítő)
+    - [Store, Update, Destroy Order (Rendelésösszesítő)](#store-update-destroy-order-rendelésösszesítő)
     - [Close Day (Napzárás)](#close-day-napzárás)
 
 ## Installation
@@ -125,6 +124,8 @@ $processId = NTAK::message($client, Carbon::now())
 ```
 
 > Returns the NTAK process ID string.
+>
+> - [NTAKOrder](#create-an-order-instance)
 
 #### Close Day (Napzárás)
 
@@ -143,6 +144,8 @@ $processId = NTAK::message($client, Carbon::now())
 ```
 
 > Returns the NTAK process ID string.
+>
+> - [NTAKDayType](#ntakdaytype)
 
 ## Enums
 
