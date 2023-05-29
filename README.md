@@ -323,7 +323,7 @@ vendor/bin/phpunit src/Tests
 
 I am not taking any responsiblities for the use of this package.
 
-This is simply a personal project that could help other fellow software artisans to make requests to NTAK.
+This is simply a personal project that could help other fellow software artisans to make requests to MTÜ.
 
 It's still recommended to read the documentation of the RMS Interface, even in case of using this package.
 
