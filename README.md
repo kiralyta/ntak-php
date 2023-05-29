@@ -12,7 +12,7 @@ composer require kiralyta/ntak-php
 
 ## Usage
 
-### Create an API Client
+### Create an API Client Instance
 
 ``` php
 use Kiralyta\Ntak\NTAKClient;
@@ -32,6 +32,48 @@ $client = new NTAKClient(
 >
 > It is recommended to have a singleton ```NTAKClient``` instance during one request cycle. This means, you can create multiple requests with a single ```NTAKClient``` instance.
 
+### Create an Order Item Instance
+
+``` php
+use Carbon\Carbon;
+use Kiralyta\Ntak\Enums\NTAKCategory;
+use Kiralyta\Ntak\Enums\NTAKSubcategory;
+use Kiralyta\Ntak\Enums\NTAKVat;
+use Kiralyta\Ntak\Models\NTAKOrderItem;
+
+$orderItem = new NTAKOrderItem(
+    name:            'Absolut Vodka', // Any kind of string
+    category:        NTAKCategory::ALKOHOLOSITAL, // Main category
+    subcategory:     NTAKSubcategory::PARLAT, // Subcategory
+    vat:             NTAKVat::C_27,
+    price:           1000
+    amountType:      NTAKAmount::LITER,
+    amount:          0.04,
+    quantity:        2,
+    when:            Carbon::now()
+)
+```
+
+### Store / Update / Destroy Order (Rendelésösszesítő)
+
+## Enums
+
+### NTAKAmount
+
+Namespace of the enums:
+
+``` php
+namespace Kiralyta\Ntak\Enums;
+```
+
+### NTAKAmount
+
+| name      | value     |
+| --------  | --------- |
+| DARAB     | darab     |
+| LITER     | liter     |
+| KILOGRAMM | kilogramm |
+| EGYSEG    | egyseg    |
 
 ## Contribution
 
@@ -41,9 +83,9 @@ cd ntak-php
 composer install --dev
 ```
 
-Run tests:
+### Run Tests
 
-Put your cer.cer and pem.pem files in ./auth directory, then run:
+Put your ```cer.cer``` and ```pem.pem``` files in ```./auth``` directory, then run:
 
 ``` bash
 vendor/bin/phpunit src/Tests
