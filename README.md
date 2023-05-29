@@ -1,6 +1,17 @@
-# NTAK RMS PHP Api / SDK
+# NTAK RMS PHP API / SDK
 
 Welcome to my little package, that helps you make NTAK RMS requests like a boss.
+
+Table of Contents:
+- [Installation](#installation)
+- [Usage](#usage)
+    - [Create an API Client Instance](#create-an-api-client-instance)
+    - [Create an Order Item Instance](#create-an-order-item-instance)
+    - [Create a Payment Instance](#create-a-payment-instance)
+    - [Create an Order Instance](#create-an-order-instance)
+- [Messages (Requests)](#messages-requests)
+    - [Store Update Destroy Order (Rendelésösszesítő)](#store-update-destroy-order-rendelésösszesítő)
+    - [Close Day (Napzárás)](#close-day-napzárás)
 
 ## Installation
 
@@ -20,13 +31,13 @@ composer require kiralyta/ntak-php
 use Kiralyta\Ntak\NTAKClient;
 
 $client = new NTAKClient(
-    taxNumber:        'NTAK client tax nr', // without `-` chars
+    taxNumber:        'NTAK client tax nr',         // without `-` chars
     regNumber:        'NTAK client registration nr',
     sofwareReqNumber: 'NTAK RMS registration id',
     version:          'NTAK RMS version',
     certPath:         '/path/to/your.cer',
     keyPath:          'path/to/your.pem',
-    testing:          false // whether to hit the test NTAK API
+    testing:          false                         // whether to hit the test NTAK API
 );
 ```
 
@@ -45,9 +56,9 @@ use Kiralyta\Ntak\Enums\NTAKVat;
 use Kiralyta\Ntak\Models\NTAKOrderItem;
 
 $orderItem = new NTAKOrderItem(
-    name:            'Absolut Vodka', // Any kind of string
+    name:            'Absolut Vodka',             // Any kind of string
     category:        NTAKCategory::ALKOHOLOSITAL, // Main category
-    subcategory:     NTAKSubcategory::PARLAT, // Subcategory
+    subcategory:     NTAKSubcategory::PARLAT,     // Subcategory
     vat:             NTAKVat::C_27,
     price:           1000
     amountType:      NTAKAmount::LITER,
@@ -86,12 +97,12 @@ use Kiralyta\Ntak\Models\NTAKOrder;
 use Kiralyta\Ntak\Models\NTAKPayment;
 
 $order = new NTAKOrder(
-    orderType:  NTAKOrderType::NORMAL, // You can control whether to store, update, or destroy an order
-    orderId:   'your-rms-order-id', // RMS Order ID
-    orderItems: [new NTAKOrderItem(...)], // Array of the order items
-    start:      Carbon::now()->addMinutes(-7),
-    end:        Carbon::now(),
-    payments:   [new NTAKPayment(...)] // Array of the payments
+    orderType:  NTAKOrderType::NORMAL,         // You can control whether to store, update, or destroy an order
+    orderId:    'your-rms-order-id',           // RMS Order ID
+    orderItems: [new NTAKOrderItem(...)],      // Array of the order items
+    start:      Carbon::now()->addMinutes(-7), // Start of the order
+    end:        Carbon::now(),                 // End of the order
+    payments:   [new NTAKPayment(...)]         // Array of the payments
 );
 ```
 
@@ -101,7 +112,7 @@ $order = new NTAKOrder(
 
 ### Messages (Requests)
 
-#### Store / Update / Destroy Order (Rendelésösszesítő)
+#### Store, Update, Destroy Order (Rendelésösszesítő)
 
 ``` php
 use Carbon\Carbon;
