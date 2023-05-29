@@ -8,8 +8,28 @@ Welcome to my little package, that helps you make NTAK RMS requests like a boss.
 composer require kiralyta/ntak-php
 ```
 
+> The package requires PHP ^8.1 since it was built around PHP enums.
+
 ## Usage
 
+### Create an API Client
+
+``` php
+use Kiralyta\Ntak\NTAKClient;
+
+$client = new NTAKClient(
+    taxNumber: 'NTAK client tax nr', // without `-` chars
+    regNumber: 'NTAK client registration nr',
+    sofwareReqNumber: 'NTAK RMS registration nr',
+    version: 'NTAK RMS version',
+    certPath: '/path/to/your.cer',
+    keyPath: 'path/to/your.pem',
+    testing: false // whether to hit the test NTAK API
+)
+```
+
+> Your .pem file is basically a concatenated file of your .cer and .key files.
+> It is recommended to have a singleton ```NTAKClient``` during a request cycle. This means you can create multiple requests with a single ```NTAKClient```.
 
 
 ## Contribution
@@ -27,5 +47,3 @@ Put your cer.cer and pem.pem files in ./auth directory, then run:
 ``` bash
 vendor/bin/phpunit src/Tests
 ```
-
-> Your .pem file is basically a concatenated file of your .cer and .key files.
