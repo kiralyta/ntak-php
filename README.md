@@ -18,13 +18,13 @@ composer require kiralyta/ntak-php
 use Kiralyta\Ntak\NTAKClient;
 
 $client = new NTAKClient(
-    taxNumber: 'NTAK client tax nr', // without `-` chars
-    regNumber: 'NTAK client registration nr',
+    taxNumber:        'NTAK client tax nr', // without `-` chars
+    regNumber:        'NTAK client registration nr',
     sofwareReqNumber: 'NTAK RMS registration nr',
-    version: 'NTAK RMS version',
-    certPath: '/path/to/your.cer',
-    keyPath: 'path/to/your.pem',
-    testing: false // whether to hit the test NTAK API
+    version:          'NTAK RMS version',
+    certPath:         '/path/to/your.cer',
+    keyPath:          'path/to/your.pem',
+    testing:          false // whether to hit the test NTAK API
 )
 ```
 
