@@ -2,8 +2,12 @@
 
 namespace Kiralyta\Ntak\Enums;
 
+use Kiralyta\Ntak\Traits\EnumToArray;
+
 enum NTAKPaymentType: string
 {
+    use EnumToArray;
+
     case KESZPENZHUF = 'Készpénz huf';
     case KESZPENZEUR = 'Készpénz eur';
     case SZEPKARTYA = 'Szépkártya';
