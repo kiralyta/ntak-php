@@ -11,6 +11,7 @@ Table of Contents:
     - [Create an Order Instance](#create-an-order-instance)
     - [Store, Update, Destroy Order (Rendelésösszesítő)](#store-update-destroy-order-rendelésösszesítő)
     - [Close Day (Napzárás)](#close-day-napzárás)
+    - [Verify (Ellenőrzés)](#verify-ellenőrzés)
 - [Enums](#enums)
 - [Contribution](#contribution)
 
@@ -316,3 +317,11 @@ Put your ```cer.cer``` and ```pem.pem``` files in ```./auth``` directory, then r
 ``` bash
 vendor/bin/phpunit src/Tests
 ```
+
+I am not taking any responsiblities for the use of this package.
+
+This is simply a personal project that could help other fellow software artisans to make requests to NTAK.
+
+It's still recommended to read the documentation of the RMS Interface, even in case of using this package.
+
+Please feel free to open an issue if you encounter one.
