@@ -170,21 +170,16 @@ $response = NTAK::message($client, Carbon::now())
     );
 ```
 
-> Returns the following associative array:
+> Returns an ```NTAKVerifyResponse``` instance
 
 ``` php
-[
-    'feldolgozasAzonosito' => 'NTAK Process ID',
-    'sikeresUzenetek'      =>  [
-        [
-            'tipus'        => 'RENDELESOSSZESITO',
-            'rmsAzonosito' => 'ea36c4e0-aa33-47bf-8501-fbfcfb2f5f47',
-        ]
-    ],
-    'sikertelenUzenetek'   => [],
-    'statusz'              => 'TELJESEN_SIKERES',
-];
+$response->successful();   // Check whether our message was processed successfully
+$response->unsuccessful(); // Check whether our message was processed unsuccessfully
+$response->status;         // Returns an NTAKVerifyStatus
 ```
+
+> If you encounter an unsuccessful message, you should further examine [NTAKVerifyStatus](#ntakverifystatus).
+> It's recommended to wait at least 60 seconds before the first verification attempt of a processs ID.
 
 ## Enums
 
@@ -295,6 +290,16 @@ You can use the ```values()``` static method on any of the enums, in order to ge
 | C_27  | 27%                |
 | D_AJT | Ajt                |
 | E_0   | 0%                 |
+
+### NTAKVerifyStatus
+
+| name             | value ***string*** |
+| --------         | ---------          |
+| BEFOGADVA        | BEFOGADVA          |
+| TELJESEN_HIBAS   | TELJESEN_HIBAS     |
+| RESZBEN_SIKERES  | RESZBEN_SIKERES    |
+| TELJESEN_SIKERES | TELJESEN_SIKERES   |
+| UJRA_KULDENDO    | UJRA_KULDENDO      |
 
 ## Contribution
 
