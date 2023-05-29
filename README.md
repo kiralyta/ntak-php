@@ -4,7 +4,7 @@ Welcome to my little package, that helps you make NTAK RMS requests.
 
 ## Installation
 
-```
+``` bash
 composer require kiralyta/ntak-php
 ```
 
