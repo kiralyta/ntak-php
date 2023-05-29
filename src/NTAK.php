@@ -161,7 +161,7 @@ class NTAK
         return $this->client->message(
             $message,
             $this->when,
-            '/rms/napi-zaras'
+            '/rms/ellenorzes'
         )['uzenetValaszok'][0];
     }
 }

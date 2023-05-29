@@ -11,6 +11,7 @@ Table of Contents:
     - [Create an Order Instance](#create-an-order-instance)
     - [Store, Update, Destroy Order (Rendelésösszesítő)](#store-update-destroy-order-rendelésösszesítő)
     - [Close Day (Napzárás)](#close-day-napzárás)
+- [Contribution](#contribution)
 
 ## Installation
 
@@ -147,6 +148,35 @@ $processId = NTAK::message($client, Carbon::now())
 >
 > - [NTAKDayType](#ntakdaytype)
 
+#### Verify (Ellenőrzés)
+
+``` php
+use Carbon\Carbon;
+use Kiralyta\Ntak\Enums\NTAKDayType;
+use Kiralyta\Ntak\NTAK;
+
+$response = NTAK::message($client, Carbon::now())
+    ->verify(
+        process-id: 'NTAK Process ID'
+    );
+```
+
+> Returns the following associative array:
+
+``` php
+[
+    'feldolgozasAzonosito' => 'NTAK Process ID',
+    'sikeresUzenetek'      =>  [
+        [
+            'tipus'        => 'RENDELESOSSZESITO',
+            'rmsAzonosito' => 'ea36c4e0-aa33-47bf-8501-fbfcfb2f5f47',
+        ]
+    ],
+    'sikertelenUzenetek'   => [],
+    'statusz'              => 'TELJESEN_SIKERES',
+];
+```
+
 ## Enums
 
 Namespace of the enums:
@@ -154,6 +184,8 @@ Namespace of the enums:
 ``` php
 namespace Kiralyta\Ntak\Enums;
 ```
+
+You can use the ```values()``` static method on any of the enums, in order to get the available values.
 
 ### NTAKAmount
 
