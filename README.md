@@ -14,6 +14,7 @@ Table of Contents:
     - [Verify (Ellenőrzés)](#verify-ellenőrzés)
 - [Enums](#enums)
 - [Contribution](#contribution)
+- [Last Words](#last-words)
 
 ## Installation
 
@@ -317,6 +318,8 @@ Put your ```cer.cer``` and ```pem.pem``` files in ```./auth``` directory, then r
 ``` bash
 vendor/bin/phpunit src/Tests
 ```
+
+## Last Words
 
 I am not taking any responsiblities for the use of this package.
 
