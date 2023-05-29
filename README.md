@@ -175,9 +175,11 @@ $response = NTAK::message($client, Carbon::now())
 > Returns an ```NTAKVerifyResponse``` instance
 
 ``` php
-$response->successful();   // Check whether our message was processed successfully
-$response->unsuccessful(); // Check whether our message was processed unsuccessfully
-$response->status;         // Returns an NTAKVerifyStatus
+$response->successful();         // Check whether our message was processed successfully
+$response->unsuccessful();       // Check whether our message was processed unsuccessfully
+$response->status;               // Returns an NTAKVerifyStatus
+$response->successfulMessages;   // Returns an array of the successful messages
+$response->unsuccessfulMessages; // Returns an array of the unsuccessful messages
 ```
 
 > If you encounter an unsuccessful message, you should further examine [NTAKVerifyStatus](#ntakverifystatus).
