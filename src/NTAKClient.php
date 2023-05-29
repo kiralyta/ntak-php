@@ -13,8 +13,9 @@ class NTAKClient
     protected Client $client;
     protected Carbon $when;
     protected string $url = 'https://rms.tesztntak.hu';
-    protected array $lastRequest;
-    protected array $lastResponse;
+    protected array  $lastRequest;
+    protected array  $lastResponse;
+    protected int    $lastRequestTime; // milliseconds
 
     /**
      * __construct
@@ -72,11 +73,16 @@ class NTAKClient
         try {
             $this->lastRequest = $json;
 
+            $start = Carbon::now();
+
             $response = $this->client->request(
                 'post',
                 $uri,
                 compact('json', 'headers')
             );
+
+            $this->lastRequestTime = Carbon::now()->diffInMilliseconds($start);
+
         } catch (ClientException $e) {
             throw new NTAKClientException(
                 $e->getResponse()->getBody()->getContents()
@@ -151,5 +157,15 @@ class NTAKClient
     public function lastResponse(): ?array
     {
         return $this->lastResponse;
+    }
+
+    /**
+     * lastRequestTime getter (ms)
+     *
+     * @return int
+     */
+    public function lastRequestTime(): ?int
+    {
+        return $this->lastRequestTime;
     }
 }
