@@ -12,7 +12,9 @@ composer require kiralyta/ntak-php
 
 ## Usage
 
-### Create an API Client Instance
+### Instances
+
+#### Create an API Client Instance
 
 ``` php
 use Kiralyta\Ntak\NTAKClient;
@@ -25,14 +27,14 @@ $client = new NTAKClient(
     certPath:         '/path/to/your.cer',
     keyPath:          'path/to/your.pem',
     testing:          false // whether to hit the test NTAK API
-)
+);
 ```
 
 > Your ```.pem``` file is basically a concatenated file of your ```.cer``` and ```.key``` files.
 >
 > It is recommended to have a singleton ```NTAKClient``` instance during one request cycle. This means, you can create multiple requests with a single ```NTAKClient``` instance.
 
-### Create an Order Item Instance
+#### Create an Order Item Instance
 
 ``` php
 use Carbon\Carbon;
@@ -52,7 +54,7 @@ $orderItem = new NTAKOrderItem(
     amount:          0.04,
     quantity:        2,
     when:            Carbon::now()
-)
+);
 ```
 
 > - [NTAKCategory](#ntakcategory)
@@ -60,7 +62,56 @@ $orderItem = new NTAKOrderItem(
 > - [NTAKVat](#ntakvat)
 > - [NTAKAmount](#ntakamount)
 
-### Store / Update / Destroy Order (Rendelésösszesítő)
+#### Create a Payment Instance
+
+``` php
+use Kiralyta\Ntak\Enums\NTAKPaymentType;
+use Kiralyta\Ntak\Models\NTAKPayment;
+
+$payment = new NTAKPayment(
+    paymentType:     NTAKPaymentType::BANKKARTYA,
+    total:           2000 // Total payed with this method type
+);
+```
+
+> - [NTAKPaymentType](#ntakpaymenttype)
+
+#### Create an Order Instance
+
+``` php
+use Carbon\Carbon;
+use Kiralyta\Ntak\Enums\NTAKOrderType;
+use Kiralyta\Ntak\Models\NTAKOrderItem;
+use Kiralyta\Ntak\Models\NTAKOrder;
+use Kiralyta\Ntak\Models\NTAKPayment;
+
+$order = new NTAKOrder(
+    orderType:  NTAKOrderType::NORMAL, // You can control whether to store, update, or destroy an order
+    orderId:   'your-rms-order-id', // RMS Order ID
+    orderItems: [new NTAKOrderItem(...)], // Array of the order items
+    start:      Carbon::now()->addMinutes(-7),
+    end:        Carbon::now(),
+    payments:   [new NTAKPayment(...)] // Array of the payments
+);
+```
+
+> - [NTAKOrderType](#ntakordertype)
+> - [NTAKOrderItem](#ntakorderitem)
+> - [NTAKPayment](#ntakpayment)
+
+### Messages (Requests)
+
+#### Store / Update / Destroy Order (Rendelésösszesítő)
+
+``` php
+use Carbon\Carbon;
+use Kiralyta\Ntak\Enums\NTAKPaymentType;
+use Kiralyta\Ntak\Models\NTAKPayment;
+use Kiralyta\Ntak\NTAK;
+
+$response = NTAK::message($client, Carbon::now())
+    ->handleOrder()
+```
 
 ## Enums
 
@@ -89,7 +140,7 @@ namespace Kiralyta\Ntak\Enums;
 | ALKOHOLOSITAL             | Alkoholos Ital                           |
 | EGYEB                     | Egyéb                                    |
 
-### NTAKSubCategory
+### NTAKSubcategory
 
 | name                      | value ***string***                              |
 | --------                  | ---------                                       |
@@ -145,6 +196,30 @@ namespace Kiralyta\Ntak\Enums;
 | NORMAL     | Normál             |
 | STORNO     | Storno             |
 | HELYESBITO | Helyesbítő         |
+
+### NTAKPaymentType
+
+| name        | value ***string*** |
+| --------    | -----------------  |
+| KESZPENZHUF | Készpénz huf       |
+| KESZPENZEUR | Készpénz eur       |
+| SZEPKARTYA  | Szépkártya         |
+| BANKKARTYA  | Bankkártya         |
+| ATUTALAS    | Átutalás           |
+| EGYEB       | Egyéb              |
+| VOUCHER     | Voucher            |
+| SZOBAHITEL  | Szobahitel         |
+| KEREKITES   | Kerekítés          |
+
+### NTAKVat
+
+| name  | value ***string*** |
+| ----- | -----------------  |
+| A_5   | 5%                 |
+| B_18  | 18%                |
+| C_27  | 27%                |
+| D_AJT | Ajt                |
+| E_0   | 0%                 |
 
 ## Contribution
 
