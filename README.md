@@ -11,6 +11,7 @@ Table of Contents:
     - [Create an Order Instance](#create-an-order-instance)
     - [Store, Update, Destroy Order (Rendelésösszesítő)](#store-update-destroy-order-rendelésösszesítő)
     - [Close Day (Napzárás)](#close-day-napzárás)
+- [Enums](#enums)
 - [Contribution](#contribution)
 
 ## Installation
