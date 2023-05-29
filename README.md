@@ -20,7 +20,7 @@ use Kiralyta\Ntak\NTAKClient;
 $client = new NTAKClient(
     taxNumber:        'NTAK client tax nr', // without `-` chars
     regNumber:        'NTAK client registration nr',
-    sofwareReqNumber: 'NTAK RMS registration nr',
+    sofwareReqNumber: 'NTAK RMS registration id',
     version:          'NTAK RMS version',
     certPath:         '/path/to/your.cer',
     keyPath:          'path/to/your.pem',
@@ -28,7 +28,7 @@ $client = new NTAKClient(
 )
 ```
 
-> Your .pem file is basically a concatenated file of your .cer and .key files.
+> Your ```.pem``` file is basically a concatenated file of your ```.cer``` and ```.key``` files.
 >
 > It is recommended to have a singleton ```NTAKClient``` instance during one request cycle. This means, you can create multiple requests with a single ```NTAKClient``` instance.
 
