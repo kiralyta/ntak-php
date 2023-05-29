@@ -108,8 +108,8 @@ $order = new NTAKOrder(
 ```
 
 > - [NTAKOrderType](#ntakordertype)
-> - [NTAKOrderItem](#ntakorderitem)
-> - [NTAKPayment](#ntakpayment)
+> - [NTAKOrderItem](#create-an-order-item-instance)
+> - [NTAKPayment](#create-a-payment-instance)
 
 ### Messages (Requests)
 
