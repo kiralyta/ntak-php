@@ -36,6 +36,7 @@ $client = new NTAKClient(
 
 ``` php
 use Carbon\Carbon;
+use Kiralyta\Ntak\Enums\NTAKAmount;
 use Kiralyta\Ntak\Enums\NTAKCategory;
 use Kiralyta\Ntak\Enums\NTAKSubcategory;
 use Kiralyta\Ntak\Enums\NTAKVat;
@@ -54,11 +55,14 @@ $orderItem = new NTAKOrderItem(
 )
 ```
 
+- [NTAKCategory](#ntakcategory)
+- [NTAKSubcategory](#ntaksubcategory)
+- [NTAKVat](#ntakvat)
+- [NTAKAmount](#ntakamount)
+
 ### Store / Update / Destroy Order (Rendelésösszesítő)
 
 ## Enums
-
-### NTAKAmount
 
 Namespace of the enums:
 
@@ -68,12 +72,79 @@ namespace Kiralyta\Ntak\Enums;
 
 ### NTAKAmount
 
-| name      | value     |
-| --------  | --------- |
-| DARAB     | darab     |
-| LITER     | liter     |
-| KILOGRAMM | kilogramm |
-| EGYSEG    | egyseg    |
+| name      | value ***string*** |
+| --------  | ---------          |
+| DARAB     | darab              |
+| LITER     | liter              |
+| KILOGRAMM | kilogramm          |
+| EGYSEG    | egyseg             |
+
+### NTAKCategory
+
+| name                      | value ***string***                       |
+| --------                  | -----------------                        |
+| ETEL                      | Étel                                     |
+| ALKMENTESITAL_HELYBEN     | Helyben készített alkoholmentes ital     |
+| ALKMENTESITAL_NEM_HELYBEN | Nem helyben készített alkoholmentes ital |
+| ALKOHOLOSITAL             | Alkoholos Ital                           |
+| EGYEB                     | Egyéb                                    |
+
+### NTAKSubCategory
+
+| name                      | value ***string***                              |
+| --------                  | ---------                                       |
+| REGGELI                   | reggeli                                         |
+| SZENDVICS                 | szendvics                                       |
+| ELOETEL                   | előétel                                         |
+| LEVES                     | leves                                           |
+| FOETEL                    | főétel                                          |
+| KORET                     | köret                                           |
+| SAVANYUSAG_SALATA         | savanyúság/saláta                               |
+| KOSTOLO                   | kóstolóétel, kóstolófalat                       |
+| PEKSUTEMENY               | péksütemény, pékáru                             |
+| DESSZERT                  | desszert                                        |
+| SNACK                     | snack                                           |
+| FOETEL_KORETTEL           | főétel körettel                                 |
+| ETELCSOMAG                | ételcsomag                                      |
+| EGYEB                     | egyéb                                           |
+| VIZ                       | víz                                             |
+| LIMONADE_SZORP_FACSART    | limonádé / szörp / frissen facsart ital         |
+| ALKOHOLMENTES_KOKTEL      | alkoholmentes koktél, alkoholmentes kevert ital |
+| TEA_FORROCSOKOLADE        | tea, forrócsoki és egyéb tejalapú italok        |
+| ITALCSOMAG                | italcsomag                                      |
+| KAVE                      | kávé                                            |
+| ROSTOS_UDITO              | rostos üdítő                                    |
+| SZENSAVAS_UDITO           | szénsavas üdítő                                 |
+| SZENSAVMENTES_UDITO       | szénsavmentes üdítő                             |
+| KOKTEL                    | koktél, kevert ital                             |
+| LIKOR                     | likőr                                           |
+| PARLAT                    | párlat                                          |
+| SOR                       | sör                                             |
+| BOR                       | bor                                             |
+| PEZSGO                    | pezsgő                                          |
+| SZERVIZDIJ                | szervizdíj                                      |
+| BORRAVALO                 | borravaló                                       |
+| KISZALLITASI_DIJ          | kiszállítási díj                                |
+| NEM_VENDEGLATAS           | nem vendéglátás                                 |
+| KORNYEZETBARAT_CSOMAGOLAS | környezetbarát csomagolás                       |
+| MUANYAG_CSOMAGOLAS        | műanyag csomagolás                              |
+| KEDVEZMENY                | kedvezmény                                      |
+
+### NTAKDayType
+
+| name                 | value ***string***   |
+| --------             | -----------------    |
+| ADOTT_NAPON_ZARVA    | Adott napon zárva    |
+| FORGALOM_NELKULI_NAP | Forgalom nélküli nap |
+| NORMAL_NAP           | Normál nap           |
+
+### NTAKOrderType
+
+| name       | value ***string*** |
+| --------   | -----------------  |
+| NORMAL     | Normál             |
+| STORNO     | Storno             |
+| HELYESBITO | Helyesbítő         |
 
 ## Contribution
 
