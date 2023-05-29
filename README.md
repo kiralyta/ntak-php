@@ -29,7 +29,8 @@ $client = new NTAKClient(
 ```
 
 > Your .pem file is basically a concatenated file of your .cer and .key files.
-> It is recommended to have a singleton ```NTAKClient``` during a request cycle. This means you can create multiple requests with a single ```NTAKClient```.
+>
+> It is recommended to have a singleton ```NTAKClient``` instance during one request cycle. This means, you can create multiple requests with a single ```NTAKClient``` instance.
 
 
 ## Contribution
