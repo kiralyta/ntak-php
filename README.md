@@ -105,13 +105,33 @@ $order = new NTAKOrder(
 
 ``` php
 use Carbon\Carbon;
-use Kiralyta\Ntak\Enums\NTAKPaymentType;
+use Kiralyta\Ntak\Models\NTAKOrder;
 use Kiralyta\Ntak\Models\NTAKPayment;
 use Kiralyta\Ntak\NTAK;
 
-$response = NTAK::message($client, Carbon::now())
-    ->handleOrder()
+$processId = NTAK::message($client, Carbon::now())
+    ->handleOrder(new NTAKOrder(...));
 ```
+
+> Returns the NTAK process ID string.
+
+#### Close Day (Napzárás)
+
+``` php
+use Carbon\Carbon;
+use Kiralyta\Ntak\Enums\NTAKDayType;
+use Kiralyta\Ntak\NTAK;
+
+$processId = NTAK::message($client, Carbon::now())
+    ->closeDay(
+        start:   Carbon::now()->addHours(-10), // Opening time (nullable)
+        end:     Carbon::now(),                // Closing time (nullable)
+        dayType: NTAKDayType::NORMAL_NAP,      // Day type
+        tips:    1000                          // Tips (default 0)
+    );
+```
+
+> Returns the NTAK process ID string.
 
 ## Enums
 
