@@ -55,10 +55,10 @@ $orderItem = new NTAKOrderItem(
 )
 ```
 
-- [NTAKCategory](#ntakcategory)
-- [NTAKSubcategory](#ntaksubcategory)
-- [NTAKVat](#ntakvat)
-- [NTAKAmount](#ntakamount)
+> - [NTAKCategory](#ntakcategory)
+> - [NTAKSubcategory](#ntaksubcategory)
+> - [NTAKVat](#ntakvat)
+> - [NTAKAmount](#ntakamount)
 
 ### Store / Update / Destroy Order (Rendelésösszesítő)
 
