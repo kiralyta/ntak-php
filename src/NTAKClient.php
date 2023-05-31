@@ -12,7 +12,9 @@ class NTAKClient
 {
     protected Client $client;
     protected Carbon $when;
-    protected string $url = 'https://rms.tesztntak.hu';
+    protected string $url;
+    protected string $prodUrl = 'https://rms.ntaktst.hu';
+    protected string $testUrl = 'https://rms.tesztntak.hu';
     protected array  $lastRequest;
     protected array  $lastResponse;
     protected int    $lastRequestTime; // milliseconds
@@ -38,9 +40,9 @@ class NTAKClient
         protected string $keyPath,
         protected bool   $testing = false
     ) {
-        if (! $testing) {
-            $this->url = 'https://rms.ntaktst.hu';
-        }
+        $this->url = $testing
+            ? $this->testUrl
+            : $this->prodUrl;
 
         $this->client = new Client([
             'base_uri' => $this->url,
@@ -90,6 +92,26 @@ class NTAKClient
         }
 
         return $this->lastResponse = json_decode($response->getBody(), true) ?? [];
+    }
+
+    /**
+     * prodUrl
+     *
+     * @return string
+     */
+    public static function prodUrl(): string
+    {
+        return self::$prodUrl;
+    }
+
+    /**
+     * testUrl
+     *
+     * @return string
+     */
+    public static function testUrl(): string
+    {
+        return self::$testUrl;
     }
 
     /**
