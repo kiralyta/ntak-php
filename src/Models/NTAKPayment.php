@@ -17,7 +17,8 @@ class NTAKPayment
     public function __construct(
         public readonly NTAKPaymentType $paymentType,
         public readonly int             $total
-    ) { }
+    ) {
+    }
 
     /**
      * buildRequest
@@ -35,7 +36,7 @@ class NTAKPayment
         ];
 
         if ($this->paymentType === NTAKPaymentType::KESZPENZHUF) {
-            $this->round = $this->total- $rounded;
+            $this->round = $this->total - $rounded;
         }
 
         return $request;

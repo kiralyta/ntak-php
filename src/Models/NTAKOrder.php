@@ -4,12 +4,17 @@ namespace Kiralyta\Ntak\Models;
 
 use Carbon\Carbon;
 use InvalidArgumentException;
+use Kiralyta\Ntak\Enums\NTAKAmount;
+use Kiralyta\Ntak\Enums\NTAKCategory;
 use Kiralyta\Ntak\Enums\NTAKOrderType;
 use Kiralyta\Ntak\Enums\NTAKPaymentType;
+use Kiralyta\Ntak\Enums\NTAKSubcategory;
+use Kiralyta\Ntak\Enums\NTAKVat;
 
 class NTAKOrder
 {
     protected int $total;
+    protected int $totalWithDiscount;
 
     /**
      * __construct
@@ -22,6 +27,7 @@ class NTAKOrder
      * @param  Carbon                   $end
      * @param  bool                     $isAtTheSpot
      * @param  array|null|NTAKPayment[] $payments
+     * @param  int                      $discount
      * @return void
      */
     public function __construct(
@@ -32,7 +38,8 @@ class NTAKOrder
         public readonly ?Carbon          $start = null,
         public readonly ?Carbon          $end = null,
         public readonly bool             $isAtTheSpot = true,
-        public readonly ?array           $payments = null
+        public readonly ?array           $payments = null,
+        public readonly int              $discount = 0,
     ) {
         if ($orderType !== NTAKOrderType::NORMAL) {
             $this->validateIfNotNormal();
@@ -42,6 +49,7 @@ class NTAKOrder
         }
 
         $this->total = $this->calculateTotal();
+        $this->totalWithDiscount = $this->calculateTotalWithDiscount();
     }
 
     /**
@@ -51,13 +59,18 @@ class NTAKOrder
      */
     public function buildOrderItems(): ?array
     {
-        return $this->orderItems === null
+        $orderItems = $this->orderItems === null
             ? null
             : array_map(
                 fn (NTAKOrderItem $orderItem) => $orderItem->buildRequest(),
                 $this->orderItems
             );
 
+        if ($orderItems !== null && $this->total > $this->totalWithDiscount) {
+            $orderItems[] = $this->buildDiscountRequest();
+        }
+
+        return $orderItems;
     }
 
     /**
@@ -94,6 +107,16 @@ class NTAKOrder
     public function total(): ?int
     {
         return $this->total;
+    }
+
+    /**
+     * totalWithDiscount getter
+     *
+     * @return int|null
+     */
+    public function totalWithDiscount(): ?int
+    {
+        return $this->totalWithDiscount;
     }
 
     /**
@@ -152,5 +175,47 @@ class NTAKOrder
                 return $carry + $orderItem->price * $orderItem->quantity;
             }, 0)
             : null;
+    }
+
+    /**
+     * calculateTotalWithDiscount
+     *
+     * @return int
+     */
+    protected function calculateTotalWithDiscount(): ?int
+    {
+        if ($this->discount === 0) {
+            return $this->total;
+        }
+
+        return $this->orderType !== NTAKOrderType::STORNO
+            ? array_reduce($this->orderItems, function (int $carry, NTAKOrderItem $orderItem) {
+                $price = ($orderItem->price * $orderItem->quantity) * (1 - $this->discount / 100);
+
+                return $carry + $price;
+            }, 0)
+            : null;
+    }
+
+    /**
+     * buildDiscountRequest
+     *
+     * @return array
+     */
+    protected function buildDiscountRequest(): array
+    {
+        return (
+            new NTAKOrderItem(
+                name:       'Kedvezmény',
+                category:    NTAKCategory::EGYEB,
+                subcategory: NTAKSubcategory::KEDVEZMENY,
+                vat:         NTAKVat::E_0,
+                price:       $this->totalWithDiscount - $this->total,
+                amountType:  NTAKAmount::DARAB,
+                amount:      1,
+                quantity:    1,
+                when:        $this->end
+            )
+        )->buildRequest();
     }
 }
