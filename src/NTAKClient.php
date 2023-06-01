@@ -13,11 +13,12 @@ class NTAKClient
     protected Client $client;
     protected Carbon $when;
     protected string $url;
-    protected string $prodUrl = 'https://rms.ntaktst.hu';
-    protected string $testUrl = 'https://rms.tesztntak.hu';
     protected array  $lastRequest;
     protected array  $lastResponse;
     protected int    $lastRequestTime; // milliseconds
+
+    protected static string $prodUrl = 'https://rms.ntaktst.hu';
+    protected static string $testUrl = 'https://rms.tesztntak.hu';
 
     /**
      * __construct
@@ -41,8 +42,8 @@ class NTAKClient
         protected bool   $testing = false
     ) {
         $this->url = $testing
-            ? $this->testUrl
-            : $this->prodUrl;
+            ? self::$testUrl
+            : self::$prodUrl;
 
         $this->client = new Client([
             'base_uri' => $this->url,
