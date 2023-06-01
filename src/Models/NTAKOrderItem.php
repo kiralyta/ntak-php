@@ -19,7 +19,7 @@ class NTAKOrderItem
      * @param NTAKVat         $vat
      * @param float           $price
      * @param NTAKAmount      $amountType
-     * @param flot            $amount
+     * @param float           $amount
      * @param int             $quantity
      * @param Carbon          $when
      *
