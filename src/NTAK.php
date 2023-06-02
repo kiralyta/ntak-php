@@ -60,6 +60,18 @@ class NTAK
     }
 
     /**
+     * fake
+     *
+     * @param  array $expectedResponse
+     * @return NTAK
+     */
+    public function fake(array $expectedResponse): NTAK
+    {
+        $this->client->fakeResponse($expectedResponse);
+        return $this;
+    }
+
+    /**
      * handleOrder
      *
      * @param  NTAKOrder $ntakOrders

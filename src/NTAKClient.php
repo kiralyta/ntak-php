@@ -10,12 +10,13 @@ use Kiralyta\Ntak\Exceptions\NTAKClientException;
 
 class NTAKClient
 {
-    protected Client $client;
-    protected Carbon $when;
-    protected string $url;
-    protected array  $lastRequest;
-    protected array  $lastResponse;
-    protected int    $lastRequestTime; // milliseconds
+    protected Client     $client;
+    protected Carbon     $when;
+    protected string     $url;
+    protected array      $lastRequest;
+    protected array      $lastResponse;
+    protected int        $lastRequestTime; // milliseconds
+    protected array|null $fakeResponse;
 
     protected static string $prodUrl = 'https://rms.ntaktst.hu';
     protected static string $testUrl = 'https://rms.tesztntak.hu';
@@ -54,6 +55,17 @@ class NTAKClient
     }
 
     /**
+     * fakeResponse
+     *
+     * @return NTAKClient
+     */
+    public function fakeResponse(array $response): NTAKClient
+    {
+        $this->fakeResponse = $response;
+        return $this;
+    }
+
+    /**
      * message
      *
      * @param  array  $message
@@ -78,11 +90,12 @@ class NTAKClient
 
             $start = Carbon::now();
 
-            $response = $this->client->request(
-                'post',
-                $uri,
-                compact('json', 'headers')
-            );
+            $response = $this->fakeResponse
+                ?: $this->client->request(
+                    'post',
+                    $uri,
+                    compact('json', 'headers')
+                );
 
             $this->lastRequestTime = Carbon::now()->diffInMilliseconds($start);
 
@@ -92,7 +105,9 @@ class NTAKClient
             );
         }
 
-        return $this->lastResponse = json_decode($response->getBody(), true) ?? [];
+        return $this->lastResponse = is_array($response)
+            ? $response
+            : json_decode($response->getBody(), true) ?? [];
     }
 
     /**
