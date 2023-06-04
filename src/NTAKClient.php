@@ -101,11 +101,11 @@ class NTAKClient
             $this->lastRequestTime = Carbon::now()->diffInMilliseconds($start);
         } catch (RequestException $e) {
             throw new NTAKClientException(
-                $e->getMessage()
+                $e->getResponse()->getBody()->getContents()
             );
         } catch (ClientException $e) {
             throw new NTAKClientException(
-                $e->getResponse()->getBody()->getContents()
+                $e->getMessage()
             );
         }
 
