@@ -16,7 +16,7 @@ class NTAKClient
     protected array      $lastRequest;
     protected array      $lastResponse;
     protected int        $lastRequestTime; // milliseconds
-    protected array|null $fakeResponse;
+    protected ?array     $fakeResponse = null;
 
     protected static string $prodUrl = 'https://rms.ntaktst.hu';
     protected static string $testUrl = 'https://rms.tesztntak.hu';
