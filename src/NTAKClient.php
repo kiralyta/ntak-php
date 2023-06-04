@@ -6,6 +6,7 @@ use Carbon\Carbon;
 use Gamegos\JWS\JWS;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\ClientException;
+use GuzzleHttp\Exception\RequestException;
 use Kiralyta\Ntak\Exceptions\NTAKClientException;
 
 class NTAKClient
@@ -100,6 +101,10 @@ class NTAKClient
             $this->lastRequestTime = Carbon::now()->diffInMilliseconds($start);
 
         } catch (ClientException $e) {
+            throw new NTAKClientException(
+                $e->getResponse()->getBody()->getContents()
+            );
+        } catch (RequestException $e) {
             throw new NTAKClientException(
                 $e->getResponse()->getBody()->getContents()
             );
