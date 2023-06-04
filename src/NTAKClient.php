@@ -102,11 +102,11 @@ class NTAKClient
 
         } catch (ClientException $e) {
             throw new NTAKClientException(
-                $e->getResponse()->getBody()->getContents()
+                $e->getMessage()
             );
         } catch (RequestException $e) {
             throw new NTAKClientException(
-                $e->getResponse()->getBody()->getContents()
+                $e->getMessage()
             );
         }
 
