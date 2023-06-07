@@ -49,7 +49,7 @@ class NTAKOrder
         if ($orderType !== NTAKOrderType::NORMAL) {
             $this->validateIfNotNormal();
         }
-        if ($orderType !== NTAKOrderType::STORNO) {
+        if ($orderType !== NTAKOrderType::SZTORNO) {
             $this->validateIfNotStorno();
         }
 
@@ -192,7 +192,7 @@ class NTAKOrder
      */
     protected function calculateTotal(): int
     {
-        if ($this->orderType !== NTAKOrderType::STORNO) {
+        if ($this->orderType !== NTAKOrderType::SZTORNO) {
             $total = $this->totalOfOrderItems($this->orderItems);
 
             return $total + $total * $this->serviceFee / 100;
@@ -212,7 +212,7 @@ class NTAKOrder
             return $this->total;
         }
 
-        if ($this->orderType !== NTAKOrderType::STORNO) {
+        if ($this->orderType !== NTAKOrderType::SZTORNO) {
             $total = $this->totalOfOrderItemsWithDiscount($this->orderItems);
 
             return $total + $total * $this->serviceFee / 100;

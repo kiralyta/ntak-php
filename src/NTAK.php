@@ -88,21 +88,21 @@ class NTAK
                     ? null
                     : $ntakOrder->ntakOrderId,
                 'targynap'                     => $ntakOrder->end->format('Y-m-d'),
-                'rendelesKezdete'              => $ntakOrder->orderType === NTAKOrderType::STORNO
+                'rendelesKezdete'              => $ntakOrder->orderType === NTAKOrderType::SZTORNO
                     ? null
                     : $ntakOrder->start->timezone('Europe/Budapest')->toIso8601String(),
-                'rendelesVege'                 => $ntakOrder->orderType === NTAKOrderType::STORNO
+                'rendelesVege'                 => $ntakOrder->orderType === NTAKOrderType::SZTORNO
                     ? null
                     : $ntakOrder->end->timezone('Europe/Budapest')->toIso8601String(),
                 'helybenFogyasztott'           => $ntakOrder->isAtTheSpot,
                 'osszesitett'                  => false,
-                'fizetesiInformaciok'          => $ntakOrder->orderType === NTAKOrderType::STORNO
+                'fizetesiInformaciok'          => $ntakOrder->orderType === NTAKOrderType::SZTORNO
                     ? null
                     : [
                         'rendelesVegosszegeHUF' => $ntakOrder->totalWithDiscount(),
                         'fizetesiModok'         => $ntakOrder->buildPaymentTypes(),
                     ],
-                'rendelesTetelek'              => $ntakOrder->orderType === NTAKOrderType::STORNO
+                'rendelesTetelek'              => $ntakOrder->orderType === NTAKOrderType::SZTORNO
                     ? null
                     : $ntakOrder->buildOrderItems(),
             ];
