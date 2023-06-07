@@ -96,7 +96,7 @@ class NTAKOrderItem
     {
         return (
             new static(
-                name:       'Szervizdíj',
+                name:       'Szervízdíj',
                 category:    NTAKCategory::EGYEB,
                 subcategory: NTAKSubcategory::SZERVIZDIJ,
                 vat:         $vat,
