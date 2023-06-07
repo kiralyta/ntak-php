@@ -34,13 +34,13 @@ composer require kiralyta/ntak-php
 use Kiralyta\Ntak\NTAKClient;
 
 $client = new NTAKClient(
-    taxNumber:        'NTAK client tax nr',         // without `-` chars
-    regNumber:        'NTAK client registration nr',
-    sofwareReqNumber: 'NTAK RMS registration id',
-    version:          'NTAK RMS version',
-    certPath:         '/path/to/your.cer',
-    keyPath:          '/path/to/your.pem',
-    testing:          false                         // whether to hit the test NTAK API
+    taxNumber:         'NTAK client tax nr',         // without `-` chars
+    regNumber:         'NTAK client registration nr',
+    softwareRegNumber: 'NTAK RMS registration id',
+    version:           'NTAK RMS version',
+    certPath:          '/path/to/your.cer',
+    keyPath:           '/path/to/your.pem',
+    testing:           false                         // whether to hit the test NTAK API
 );
 ```
 
@@ -71,7 +71,7 @@ $orderItem = new NTAKOrderItem(
     category:        NTAKCategory::ALKOHOLOSITAL, // Main category
     subcategory:     NTAKSubcategory::PARLAT,     // Subcategory
     vat:             NTAKVat::C_27,
-    price:           1000
+    price:           1000,
     amountType:      NTAKAmount::LITER,
     amount:          0.04,
     quantity:        2,
