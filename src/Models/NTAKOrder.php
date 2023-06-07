@@ -190,7 +190,7 @@ class NTAKOrder
      *
      * @return int
      */
-    protected function calculateTotal(): ?int
+    protected function calculateTotal(): int
     {
         if ($this->orderType !== NTAKOrderType::STORNO) {
             $total = $this->totalOfOrderItems($this->orderItems);
@@ -198,7 +198,7 @@ class NTAKOrder
             return $total + $total * $this->serviceFee / 100;
         }
 
-        return null;
+        return 0;
     }
 
     /**
@@ -206,7 +206,7 @@ class NTAKOrder
      *
      * @return int
      */
-    protected function calculateTotalWithDiscount(): ?int
+    protected function calculateTotalWithDiscount(): int
     {
         if ($this->discount === 0) {
             return $this->total;
@@ -218,7 +218,7 @@ class NTAKOrder
             return $total + $total * $this->serviceFee / 100;
         }
 
-        return null;
+        return 0;
     }
 
     /**
