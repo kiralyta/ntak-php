@@ -115,10 +115,13 @@ $order = new NTAKOrder(
     end:        Carbon::now(),                 // End of the order
     payments:   [new NTAKPayment(...)],         // Array of the payments
 
-    // Discount is automatically managed by the package
-    // You don't have to manually add an OrderItem with "KEDVEZMENY" subcategory
-    // This means 20% discount (defaults to 0)
-    discount:   20
+    // Discount and service fee are automatically managed by the package
+    // You don't have to manually add the OrderItem(s) with "KEDVEZMENY" / "SZERVIZDIJ" subcategories
+    // Vats are handled automatically as well
+    // If both discount and service fee are provided, the service fee will be calculated from the discounted total
+    // The following means 20% discount (defaults to 0) and 10% service fee (defaults to 0)
+    discount:   20,
+    serviceFee: 10
 );
 ```
 
