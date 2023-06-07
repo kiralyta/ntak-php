@@ -276,7 +276,7 @@ You can use the ```values()``` static method on any of the enums, in order to ge
 | name       | value ***string*** |
 | --------   | -----------------  |
 | NORMAL     | Normál             |
-| STORNO     | Storno             |
+| SZTORNO    | Storno             |
 | HELYESBITO | Helyesbítő         |
 
 ### NTAKPaymentType
