@@ -44,8 +44,8 @@ class StoreOrderTest extends TestCase
                 name: 'Túró rudi',
                 category: NTAKCategory::ETEL,
                 subcategory: NTAKSubcategory::SNACK,
-                vat: NTAKVat::C_27,
-                price: 1001,
+                vat: NTAKVat::A_5,
+                price: 500,
                 amountType: NTAKAmount::DARAB,
                 amount: 1,
                 quantity: 2,
@@ -74,10 +74,11 @@ class StoreOrderTest extends TestCase
                 payments: [
                     new NTAKPayment(
                         NTAKPaymentType::KESZPENZHUF,
-                        3201
+                        2400
                     )
                 ],
-                discount: 20
+                discount: 20,
+                serviceFee: 10
             )
         );
 

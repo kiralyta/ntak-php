@@ -28,6 +28,7 @@ class NTAKOrder
      * @param  bool                     $isAtTheSpot
      * @param  array|null|NTAKPayment[] $payments
      * @param  int                      $discount
+     * @param  int                      $serviceFee
      * @return void
      */
     public function __construct(
@@ -40,7 +41,11 @@ class NTAKOrder
         public readonly bool             $isAtTheSpot = true,
         public readonly ?array           $payments = null,
         public readonly int              $discount = 0,
+        public readonly int              $serviceFee = 0
     ) {
+        if ($orderType === NTAKOrderType::NORMAL) {
+            $this->validateIfNormal();
+        }
         if ($orderType !== NTAKOrderType::NORMAL) {
             $this->validateIfNotNormal();
         }
@@ -66,8 +71,8 @@ class NTAKOrder
                 $this->orderItems
             );
 
-        if ($orderItems !== null && $this->total > $this->totalWithDiscount) {
-            $orderItems[] = $this->buildDiscountRequest();
+        if ($orderItems !== null && $this->discount > 0) {
+            $orderItems = $this->buildDiscountRequests($orderItems);
         }
 
         return $orderItems;
@@ -117,6 +122,19 @@ class NTAKOrder
     public function totalWithDiscount(): ?int
     {
         return $this->totalWithDiscount;
+    }
+
+    /**
+     * validateIfNormal
+     *
+     * @return void
+     * @throws InvalidArgumentException
+     */
+    protected function validateIfNormal(): void
+    {
+        if ($this->discount > 100) {
+            throw new InvalidArgumentException('discount cannot be greater than 100');
+        }
     }
 
     /**
@@ -170,11 +188,13 @@ class NTAKOrder
      */
     protected function calculateTotal(): ?int
     {
-        return $this->orderType !== NTAKOrderType::STORNO
-            ? array_reduce($this->orderItems, function (int $carry, NTAKOrderItem $orderItem) {
-                return $carry + $orderItem->price * $orderItem->quantity;
-            }, 0)
-            : null;
+        if ($this->orderType !== NTAKOrderType::STORNO) {
+            $total = $this->totalOfOrderItems($this->orderItems);
+
+            return $total + $total * $this->serviceFee / 100;
+        }
+
+        return null;
     }
 
     /**
@@ -188,34 +208,117 @@ class NTAKOrder
             return $this->total;
         }
 
-        return $this->orderType !== NTAKOrderType::STORNO
-            ? array_reduce($this->orderItems, function (int $carry, NTAKOrderItem $orderItem) {
-                $price = ($orderItem->price * $orderItem->quantity) * (1 - $this->discount / 100);
+        if ($this->orderType !== NTAKOrderType::STORNO) {
+            $total = $this->totalOfOrderItemsWithDiscount($this->orderItems);
 
-                return $carry + $price;
-            }, 0)
-            : null;
+            return $total + $total * $this->serviceFee / 100;
+        }
+
+        return null;
     }
 
     /**
-     * buildDiscountRequest
+     * buildDiscountRequests
      *
+     * @param  array $orderItems
      * @return array
      */
-    protected function buildDiscountRequest(): array
+    protected function buildDiscountRequests(array $orderItems): array
     {
-        return (
-            new NTAKOrderItem(
+        $vats = array_unique(
+            array_map(
+                fn (NTAKOrderItem $orderItem) => $orderItem->vat,
+                $this->orderItems
+            ),
+            SORT_REGULAR
+        );
+
+        foreach ($vats as $vat) {
+            $orderItems = $this->addDiscountRequestByVat($orderItems, $vat);
+        }
+
+        return $orderItems;
+    }
+
+    /**
+     * addDiscountRequestByVat
+     *
+     * @param  array   $orderItems
+     * @param  NTAKVat $vat
+     * @return array
+     */
+    protected function addDiscountRequestByVat(array $orderItems, NTAKVat $vat): array
+    {
+        $orderItemsWithVat = $this->orderItemsWithVat($vat);
+
+        $totalOfOrderItems = $this->totalOfOrderItems($orderItemsWithVat);
+        $totalOfOrderItemsWithDiscount = $this->totalOfOrderItemsWithDiscount($orderItemsWithVat);
+
+
+        $orderItems[] =
+            (new NTAKOrderItem(
                 name:       'Kedvezmény',
                 category:    NTAKCategory::EGYEB,
                 subcategory: NTAKSubcategory::KEDVEZMENY,
-                vat:         NTAKVat::E_0,
-                price:       $this->totalWithDiscount - $this->total,
+                vat:         $vat,
+                price:       $totalOfOrderItemsWithDiscount - $totalOfOrderItems,
                 amountType:  NTAKAmount::DARAB,
                 amount:      1,
                 quantity:    1,
                 when:        $this->end
-            )
-        )->buildRequest();
+            ))->buildRequest();
+
+        return $orderItems;
+    }
+
+    /**
+     * orderItemsWithVat
+     *
+     * @param  NTAKVat $vat
+     * @return array
+     */
+    protected function orderItemsWithVat(NTAKVat $vat): array
+    {
+        return array_filter(
+            $this->orderItems,
+            fn (NTAKOrderItem $orderItem) => $orderItem->vat === $vat
+        );
+    }
+
+    /**
+     * totalOfOrderItems
+     *
+     * @param  array $orderItems
+     * @return int
+     */
+    protected function totalOfOrderItems(array $orderItems): int
+    {
+        return array_reduce(
+            $orderItems,
+            function (int $carry, NTAKOrderItem $orderItem) {
+                return $carry + $orderItem->price * $orderItem->quantity;
+            },
+            0
+        );
+    }
+
+    /**
+     * totalOfOrderItemsWithDiscount
+     *
+     * @param  array|NTAKOrderItem[] $orderItems
+     * @return int
+     */
+    protected function totalOfOrderItemsWithDiscount(array $orderItems): int
+    {
+        return array_reduce(
+            $orderItems,
+            function (int $carry, NTAKOrderItem $orderItem) {
+                $price = ($orderItem->price * $orderItem->quantity) *
+                         (1 - $this->discount / 100);
+
+                return $carry + $price;
+            },
+            0
+        );
     }
 }
