@@ -58,4 +58,54 @@ class NTAKOrderItem
             'tetelOsszesito'    => $this->quantity * $this->price,
         ];
     }
+
+    /**
+     * buildDiscountRequest
+     *
+     * @param  NTAKVat $vat
+     * @param  int     $price
+     * @param  Carbon  $when
+     * @return array
+     */
+    public static function buildDiscountRequest(NTAKVat $vat, int $price, Carbon $when): array
+    {
+        return (
+            new static(
+                name:       'Kedvezmény',
+                category:    NTAKCategory::EGYEB,
+                subcategory: NTAKSubcategory::KEDVEZMENY,
+                vat:         $vat,
+                price:       $price,
+                amountType:  NTAKAmount::DARAB,
+                amount:      1,
+                quantity:    1,
+                when:        $when
+            )
+        )->buildRequest();
+    }
+
+    /**
+     * buildServiceFeeRequest
+     *
+     * @param  NTAKVat $vat
+     * @param  int     $price
+     * @param  Carbon  $when
+     * @return array
+     */
+    public static function buildServiceFeeRequest(NTAKVat $vat, int $price, Carbon $when): array
+    {
+        return (
+            new static(
+                name:       'Szervizdíj',
+                category:    NTAKCategory::EGYEB,
+                subcategory: NTAKSubcategory::SZERVIZDIJ,
+                vat:         $vat,
+                price:       $price,
+                amountType:  NTAKAmount::DARAB,
+                amount:      1,
+                quantity:    1,
+                when:        $when
+            )
+        )->buildRequest();
+    }
 }

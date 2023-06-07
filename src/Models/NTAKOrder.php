@@ -75,6 +75,10 @@ class NTAKOrder
             $orderItems = $this->buildDiscountRequests($orderItems);
         }
 
+        if ($orderItems !== null && $this->serviceFee > 0) {
+            $orderItems = $this->buildServiceFeeRequests($orderItems);
+        }
+
         return $orderItems;
     }
 
@@ -225,16 +229,27 @@ class NTAKOrder
      */
     protected function buildDiscountRequests(array $orderItems): array
     {
-        $vats = array_unique(
-            array_map(
-                fn (NTAKOrderItem $orderItem) => $orderItem->vat,
-                $this->orderItems
-            ),
-            SORT_REGULAR
-        );
+        $vats = $this->uniqueVats();
 
         foreach ($vats as $vat) {
             $orderItems = $this->addDiscountRequestByVat($orderItems, $vat);
+        }
+
+        return $orderItems;
+    }
+
+    /**
+     * buildServiceFeeRequests
+     *
+     * @param  array $orderItems
+     * @return array
+     */
+    protected function buildServiceFeeRequests(array $orderItems): array
+    {
+        $vats = $this->uniqueVats();
+
+        foreach ($vats as $vat) {
+            $orderItems = $this->addServiceFeeRequestByVat($orderItems, $vat);
         }
 
         return $orderItems;
@@ -254,19 +269,33 @@ class NTAKOrder
         $totalOfOrderItems = $this->totalOfOrderItems($orderItemsWithVat);
         $totalOfOrderItemsWithDiscount = $this->totalOfOrderItemsWithDiscount($orderItemsWithVat);
 
+        $orderItems[] = NTAKOrderItem::buildDiscountRequest(
+            $vat,
+            $totalOfOrderItemsWithDiscount - $totalOfOrderItems,
+            $this->end
+        );
 
-        $orderItems[] =
-            (new NTAKOrderItem(
-                name:       'Kedvezmény',
-                category:    NTAKCategory::EGYEB,
-                subcategory: NTAKSubcategory::KEDVEZMENY,
-                vat:         $vat,
-                price:       $totalOfOrderItemsWithDiscount - $totalOfOrderItems,
-                amountType:  NTAKAmount::DARAB,
-                amount:      1,
-                quantity:    1,
-                when:        $this->end
-            ))->buildRequest();
+        return $orderItems;
+    }
+
+    /**
+     * addServiceFeeRequestByVat
+     *
+     * @param  array   $orderItems
+     * @param  NTAKVat $vat
+     * @return array
+     */
+    protected function addServiceFeeRequestByVat(array $orderItems, NTAKVat $vat): array
+    {
+        $orderItemsWithVat = $this->orderItemsWithVat($vat);
+
+        $totalOfOrderItemsWithDiscount = $this->totalOfOrderItemsWithDiscount($orderItemsWithVat);
+
+        $orderItems[] = NTAKOrderItem::buildServiceFeeRequest(
+            $vat,
+            $totalOfOrderItemsWithDiscount * $this->serviceFee / 100,
+            $this->end
+        );
 
         return $orderItems;
     }
@@ -319,6 +348,22 @@ class NTAKOrder
                 return $carry + $price;
             },
             0
+        );
+    }
+
+    /**
+     * uniqueVats
+     *
+     * @return array
+     */
+    protected function uniqueVats(): array
+    {
+        return array_unique(
+            array_map(
+                fn (NTAKOrderItem $orderItem) => $orderItem->vat,
+                $this->orderItems
+            ),
+            SORT_REGULAR
         );
     }
 }

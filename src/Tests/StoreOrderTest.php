@@ -74,7 +74,7 @@ class StoreOrderTest extends TestCase
                 payments: [
                     new NTAKPayment(
                         NTAKPaymentType::KESZPENZHUF,
-                        2400
+                        3000 * 0.8 + 3000 * 0.8 * 0.1
                     )
                 ],
                 discount: 20,
