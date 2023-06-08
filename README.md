@@ -108,22 +108,29 @@ use Kiralyta\Ntak\Models\NTAKOrder;
 use Kiralyta\Ntak\Models\NTAKPayment;
 
 $order = new NTAKOrder(
-    orderType:  NTAKOrderType::NORMAL,         // You can control whether to store, update, or destroy an order
-    orderId:    'your-rms-order-id',           // RMS Order ID
-    orderItems: [new NTAKOrderItem(...)],      // Array of the order items
-    start:      Carbon::now()->addMinutes(-7), // Start of the order
-    end:        Carbon::now(),                 // End of the order
-    payments:   [new NTAKPayment(...)],         // Array of the payments
+    orderType:   NTAKOrderType::NORMAL,         // You can control whether to store, update, or destroy an order
+    orderId:     'your-rms-order-id',           // RMS Order ID
+    orderItems:  [new NTAKOrderItem(...)],      // Array of the order items
+    start:       Carbon::now()->addMinutes(-7), // Start of the order
+    end:         Carbon::now(),                 // End of the order
+    payments:    [new NTAKPayment(...)],        // Array of the payments
 
     // Discount and service fee are automatically managed by the package
     // You don't have to manually add the OrderItem(s) with "KEDVEZMENY" / "SZERVIZDIJ" subcategories
     // Vats are handled automatically as well
     // If both discount and service fee are provided, the service fee will be calculated from the discounted total
     // The following means 20% discount (defaults to 0) and 10% service fee (defaults to 0)
-    discount:   20,
-    serviceFee: 10
+    discount:    20,
+    serviceFee:  10,
+
+    // Only on update / destroy
+    ntakOrderId: 'your-previous-order-id'
 );
 ```
+
+> When you are updating / destroying an order, you need to provide (generate) a new `orderId` with each requests.
+>
+> In these cases, the `ntakOrderId` is always the last provided `orderId`.
 
 > - [NTAKOrderType](#ntakordertype)
 > - [NTAKOrderItem](#create-an-order-item-instance)
