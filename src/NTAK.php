@@ -83,10 +83,10 @@ class NTAK
         foreach ($ntakOrders as $ntakOrder) {
             $orders[] = [
                 'rendelesBesorolasa'           => $ntakOrder->orderType->name,
-                'rmsRendelesAzonosito'         => $ntakOrder->orderId,
+                'rmsRendelesAzonosito'         => $ntakOrder->ntakOrderId,
                 'hivatkozottRendelesOsszesito' => $ntakOrder->orderType === NTAKOrderType::NORMAL
                     ? null
-                    : $ntakOrder->ntakOrderId,
+                    : $ntakOrder->orderId,
                 'targynap'                     => $ntakOrder->end->format('Y-m-d'),
                 'rendelesKezdete'              => $ntakOrder->orderType === NTAKOrderType::SZTORNO
                     ? null
