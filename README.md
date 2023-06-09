@@ -23,6 +23,8 @@ composer require kiralyta/ntak-php
 ```
 
 > The package requires PHP ^8.1 since it was built around PHP enums.
+>
+> For PHP 7, see [Natsu007/ntak-php fork](https://github.com/Natsu007/ntak-php).
 
 ## Usage
 
