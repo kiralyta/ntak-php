@@ -129,8 +129,8 @@ class NTAK
      * @return string
      */
     public function closeDay(
-        ?Carbon     $start,
-        ?Carbon     $end,
+        Carbon      $start,
+        ?Carbon     $end = null,
         NTAKDayType $dayType,
         int         $tips = 0
     ): string {
