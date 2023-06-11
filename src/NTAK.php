@@ -179,8 +179,8 @@ class NTAK
         )['uzenetValaszok'][0];
 
         return new NTAKVerifyResponse(
-            successfulMessages:   $response['sikeresUzenetek'],
-            unsuccessfulMessages: $response['sikertelenUzenetek'],
+            successfulMessages:   $response['sikeresUzenetek'] ?? [],
+            unsuccessfulMessages: $response['sikertelenUzenetek'] ?? [],
             status:               NTAKVerifyStatus::from($response['statusz'])
         );
     }
