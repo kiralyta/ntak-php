@@ -40,8 +40,7 @@ $client = new NTAKClient(
     regNumber:         'NTAK client registration nr',
     softwareRegNumber: 'NTAK RMS registration id',
     version:           'NTAK RMS version',
-    certPath:          '/path/to/your.cer',
-    keyPath:           '/path/to/your.pem',
+    certPath:          '/path/to/your.pem',
     testing:           false                         // whether to hit the test NTAK API
 );
 ```
