@@ -30,7 +30,6 @@ class NTAKClient
      * @param  string $softwareRegNumber
      * @param  string $version
      * @param  string $certPath
-     * @param  string $keyPath
      * @param  bool   $testing
      * @return void
      */
@@ -40,7 +39,6 @@ class NTAKClient
         protected string $softwareRegNumber,
         protected string $version,
         protected string $certPath,
-        protected string $keyPath,
         protected bool   $testing = false
     ) {
         $this->url = $testing
@@ -50,7 +48,7 @@ class NTAKClient
         $this->client = new Client([
             'base_uri' => $this->url,
             'cert'     => $certPath,
-            'ssl_key'  => $keyPath,
+            'ssl_key'  => $certPath,
             'verify'   => false,
         ]);
     }
@@ -148,14 +146,16 @@ class NTAKClient
                 'typ' => 'JWS'
             ],
             $message,
-            file_get_contents($this->keyPath)
+            openssl_pkey_get_private(file_get_contents($this->certPath))
         );
 
         $tmp = explode('.', $jws);
 
+        openssl_x509_export(file_get_contents($this->certPath), $tmpCert);
+
         return [
             'x-jws-signature' => $tmp[0].'..'.$tmp[2],
-            'x-certificate'   => base64_encode(file_get_contents($this->certPath))
+            'x-certificate'   => base64_encode($tmpCert)
         ];
     }
 
