@@ -185,7 +185,7 @@ use Kiralyta\Ntak\NTAK;
 
 $response = NTAK::message($client, Carbon::now())
     ->verify(
-        process_id: 'NTAK Process ID'
+        processId: 'NTAK Process ID'
     );
 ```
 
