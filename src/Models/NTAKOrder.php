@@ -4,11 +4,8 @@ namespace Kiralyta\Ntak\Models;
 
 use Carbon\Carbon;
 use InvalidArgumentException;
-use Kiralyta\Ntak\Enums\NTAKAmount;
-use Kiralyta\Ntak\Enums\NTAKCategory;
 use Kiralyta\Ntak\Enums\NTAKOrderType;
 use Kiralyta\Ntak\Enums\NTAKPaymentType;
-use Kiralyta\Ntak\Enums\NTAKSubcategory;
 use Kiralyta\Ntak\Enums\NTAKVat;
 
 class NTAKOrder
