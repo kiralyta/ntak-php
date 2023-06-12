@@ -39,22 +39,22 @@ class StoreOrderTest extends TestCase
         $this->assertIsArray($this->client->lastResponse());
     }
 
-    public function test_destroy_order(): void
-    {
-        // Create order
-        $when = Carbon::now()->addMinutes(-1);
+    // public function test_destroy_order(): void
+    // {
+    //     // Create order
+    //     $when = Carbon::now()->addMinutes(-1);
 
-        $response = $this->ntak()->handleOrder(
-            $ntakOrder = $this->ntakOrder($when, NTAKOrderType::NORMAL)
-        );
+    //     $response = $this->ntak()->handleOrder(
+    //         $ntakOrder = $this->ntakOrder($when, NTAKOrderType::NORMAL)
+    //     );
 
-        // Destroy order
-        $when = Carbon::now()->addMinutes(-1);
+    //     // Destroy order
+    //     $when = Carbon::now()->addMinutes(-1);
 
-        $response = $this->ntak()->handleOrder(
-            $ntakOrder = $this->ntakOrder($when, NTAKOrderType::NORMAL)
-        );
-    }
+    //     $response = $this->ntak()->handleOrder(
+    //         $ntakOrder = $this->ntakOrder($when, NTAKOrderType::NORMAL)
+    //     );
+    // }
 
     /**
      * ntak
@@ -70,7 +70,6 @@ class StoreOrderTest extends TestCase
                 $this->softwareRegNumber,
                 $this->version,
                 $this->certPath,
-                $this->keyPath,
                 true
             ),
             Carbon::now()

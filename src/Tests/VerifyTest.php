@@ -24,7 +24,6 @@ class VerifyTest extends TestCase
                 $this->softwareRegNumber,
                 $this->version,
                 $this->certPath,
-                $this->keyPath,
                 true
             ),
             Carbon::now()
