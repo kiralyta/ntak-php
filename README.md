@@ -196,6 +196,7 @@ $response->unsuccessful();       // Check whether our message was processed unsu
 $response->status;               // Returns an NTAKVerifyStatus
 $response->successfulMessages;   // Returns an array of the successful messages
 $response->unsuccessfulMessages; // Returns an array of the unsuccessful messages
+$response->headerErrors;         // Returns an array of the header errors
 ```
 
 > If you encounter an unsuccessful message, you should further examine [NTAKVerifyStatus](#ntakverifystatus).
