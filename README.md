@@ -116,6 +116,10 @@ $order = new NTAKOrder(
     end:         Carbon::now(),                 // End of the order
     payments:    [new NTAKPayment(...)],        // Array of the payments
 
+    // Take away handled automatically
+    // Vat changed to 27 in all OrderItems that have a category "Helyben készített alkoholmentes ital" in case of isAtTheSpot is false
+    isAtTheSpot: true,
+
     // Discount and service fee are automatically managed by the package
     // You don't have to manually add the OrderItem(s) with "KEDVEZMENY" / "SZERVIZDIJ" subcategories
     // Vats are handled automatically as well

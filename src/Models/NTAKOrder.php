@@ -64,7 +64,7 @@ class NTAKOrder
         $orderItems = $this->orderItems === null
             ? null
             : array_map(
-                fn (NTAKOrderItem $orderItem) => $orderItem->buildRequest(),
+                fn (NTAKOrderItem $orderItem) => $orderItem->buildRequest($this->isAtTheSpot),
                 $this->orderItems
             );
 

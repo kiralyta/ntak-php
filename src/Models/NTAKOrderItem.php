@@ -29,7 +29,7 @@ class NTAKOrderItem
         public readonly string          $name,
         public readonly NTAKCategory    $category,
         public readonly NTAKSubcategory $subcategory,
-        public readonly NTAKVat         $vat,
+        public          NTAKVat         $vat,
         public readonly int             $price,
         public readonly NTAKAmount      $amountType,
         public readonly float           $amount,
@@ -41,10 +41,15 @@ class NTAKOrderItem
     /**
      * buildRequest
      *
+     * @param  bool $isAtTheSpot
      * @return array
      */
-    public function buildRequest(): array
+    public function buildRequest(bool $isAtTheSpot = true): array
     {
+        $this->vat = ! $isAtTheSpot && $this->category === NTAKCategory::ALKMENTESITAL_HELYBEN
+            ?  NTAKVat::C_27
+            : $this->vat;
+
         return [
             'megnevezes'        => $this->name,
             'fokategoria'       => $this->category->name,
