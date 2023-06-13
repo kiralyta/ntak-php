@@ -177,11 +177,11 @@ class NTAK
             $this->when,
             '/rms/ellenorzes'
         )['uzenetValaszok'][0];
-        
+
         return new NTAKVerifyResponse(
             successfulMessages:   $response['sikeresUzenetek'] ?? [],
             unsuccessfulMessages: $response['sikertelenUzenetek'] ?? [],
-            headerErrors: $response['fejlecHibak'] ?? [],
+            headerErrors:         $response['fejlecHibak'] ?? [],
             status:               NTAKVerifyStatus::from($response['statusz'])
         );
     }
