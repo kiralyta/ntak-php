@@ -181,6 +181,7 @@ class NTAK
         return new NTAKVerifyResponse(
             successfulMessages:   $response['sikeresUzenetek'] ?? [],
             unsuccessfulMessages: $response['sikertelenUzenetek'] ?? [],
+            headerErrors:         $response['fejlecHibak'] ?? [],
             status:               NTAKVerifyStatus::from($response['statusz'])
         );
     }
