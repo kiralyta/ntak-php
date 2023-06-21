@@ -45,6 +45,26 @@ $client = new NTAKClient(
 );
 ```
 
+#### Or create an API Client Instance with logging
+``` php
+use Kiralyta\Ntak\NTAKClient;
+use Monolog\Handler\StreamHandler;
+use Monolog\Logger;
+
+$log = new Logger('NTAK');
+$log->pushHandler(new StreamHandler(__DIR__.'/ntak-log/' . Carbon::today()->toDateString() . '.log')); //create daily log to the specified folder
+
+$client = new NTAKClient(
+    taxNumber:         'NTAK client tax nr',         // without `-` chars
+    regNumber:         'NTAK client registration nr',
+    softwareRegNumber: 'NTAK RMS registration id',
+    version:           'NTAK RMS version',
+    certPath:          '/path/to/your.pem',
+    testing:           false,                         // whether to hit the test NTAK API
+    log:               $log
+);
+```
+
 > Your ```.pem``` file is basically a concatenated file of your ```.cer``` and ```.key``` files.
 >
 > It is recommended to have a singleton ```NTAKClient``` instance during one request cycle. This means, you can create multiple requests with a single ```NTAKClient``` instance.
