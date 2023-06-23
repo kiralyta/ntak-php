@@ -41,27 +41,9 @@ $client = new NTAKClient(
     softwareRegNumber: 'NTAK RMS registration id',
     version:           'NTAK RMS version',
     certPath:          '/path/to/your.pem',
-    testing:           false                         // whether to hit the test NTAK API
-);
-```
-
-#### Or create an API Client Instance with logging
-``` php
-use Kiralyta\Ntak\NTAKClient;
-use Monolog\Handler\StreamHandler;
-use Monolog\Logger;
-
-$log = new Logger('NTAK');
-$log->pushHandler(new StreamHandler(__DIR__.'/ntak-log/' . Carbon::today()->toDateString() . '.log')); //create daily log to the specified folder
-
-$client = new NTAKClient(
-    taxNumber:         'NTAK client tax nr',         // without `-` chars
-    regNumber:         'NTAK client registration nr',
-    softwareRegNumber: 'NTAK RMS registration id',
-    version:           'NTAK RMS version',
-    certPath:          '/path/to/your.pem',
-    testing:           false,                         // whether to hit the test NTAK API
-    log:               $log
+    testing:           false,                        // whether to hit the test NTAK API
+    logging:           true,                         // optional parameter for logging (default value: false)
+    loggingPath:       '/path/to/log/'               // the location of the log files (default value: ./ntak-log)
 );
 ```
 

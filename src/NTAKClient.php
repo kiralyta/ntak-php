@@ -9,6 +9,7 @@ use GuzzleHttp\Exception\ClientException;
 use GuzzleHttp\Exception\RequestException;
 use Kiralyta\Ntak\Exceptions\NTAKClientException;
 use Monolog\Formatter\LineFormatter;
+use Monolog\Handler\StreamHandler;
 use Monolog\Level;
 use Monolog\Logger;
 
@@ -22,6 +23,8 @@ class NTAKClient
     protected int        $lastRequestTime; // milliseconds
     protected ?array     $fakeResponse = null;
 
+    protected ?Logger    $logger = null;
+
     protected static string $prodUrl = 'https://rms.ntaktst.hu';
     protected static string $testUrl = 'https://rms.tesztntak.hu';
 
@@ -34,7 +37,8 @@ class NTAKClient
      * @param  string  $version
      * @param  string  $certPath
      * @param  bool    $testing
-     * @param  ?Logger $log
+     * @param  bool    $logging
+     * @param  string  $logPath
      * @return void
      */
     public function __construct(
@@ -44,7 +48,8 @@ class NTAKClient
         protected string  $version,
         protected string  $certPath,
         protected bool    $testing = false,
-        protected ?Logger $log = null
+        protected ?bool   $logging = false,
+        protected ?string $logPath = './ntak-log/'
     ) {
         $this->url = $testing
             ? self::$testUrl
@@ -56,6 +61,11 @@ class NTAKClient
             'ssl_key'  => $certPath,
             'verify'   => false,
         ]);
+
+        if($logging) {
+            $this->logger = new Logger('NTAK');
+            $this->logger->pushHandler(new StreamHandler($logPath . Carbon::today()->toDateString() . '.log'));
+        }
     }
 
     /**
@@ -226,10 +236,10 @@ class NTAKClient
 
     public function logging($message, $context = [], Level $level = Level::Info)
     {
-        if ($this->log) {
+        if ($this->logger) {
             $formatter = new LineFormatter(null, null, false, true);
-            $this->log->getHandlers()[0]->setFormatter($formatter);
-            $this->log->addRecord($level->value, $message, $context);
+            $this->logger->getHandlers()[0]->setFormatter($formatter);
+            $this->logger->addRecord($level->value, $message, $context);
         }
     }
 }
