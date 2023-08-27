@@ -57,7 +57,7 @@ class NTAKOrderItem
             'afaKategoria'      => $this->vat->name,
             'bruttoEgysegar'    => $this->price,
             'mennyisegiEgyseg'  => $this->amountType->name,
-            'mennyiseg'         => $this->amount,
+            'mennyiseg'         => round($this->amount, 2),
             'tetelszam'         => $this->quantity,
             'rendelesIdopontja' => $this->when->timezone('Europe/Budapest')->toIso8601String(),
             'tetelOsszesito'    => $this->quantity * $this->price,
