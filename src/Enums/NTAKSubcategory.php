@@ -30,7 +30,7 @@ enum NTAKSubcategory: string
     case KAVE = 'kávé';
     case ROSTOS_UDITO = 'rostos üdítő';
     case SZENSAVAS_UDITO = 'szénsavas üdítő';
-    case SZENSAVMENTES_UDITO = 'szénsavmentes üdítő ';
+    case SZENSAVMENTES_UDITO = 'szénsavmentes üdítő';
     case KOKTEL = 'koktél, kevert ital';
     case LIKOR = 'likőr';
     case PARLAT = 'párlat';
