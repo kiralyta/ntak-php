@@ -30,12 +30,14 @@ class NTAKPayment
         $rounded = 0;
         $request = [
             'fizetesiMod'       => $this->paymentType->name,
-            'fizetettOsszegHUF' => $this->paymentType !== NTAKPaymentType::KESZPENZHUF
+            'fizetettOsszegHUF' => ! in_array($this->paymentType, [NTAKPaymentType::KESZPENZHUF, NTAKPaymentType::KESZPENZEUR])
                 ? $this->total
-                : $rounded = (int) round($this->total / 5) * 5
+                : $rounded = (int) (round($this->total / 5) * 5)
         ];
 
-        if ($this->paymentType === NTAKPaymentType::KESZPENZHUF) {
+        if (in_array($this->paymentType, [
+            NTAKPaymentType::KESZPENZHUF, NTAKPaymentType::KESZPENZEUR
+        ])) {
             $this->round = $this->total - $rounded;
         }
 
