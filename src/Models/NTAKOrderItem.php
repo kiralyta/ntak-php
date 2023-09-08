@@ -30,7 +30,7 @@ class NTAKOrderItem
         public readonly NTAKCategory    $category,
         public readonly NTAKSubcategory $subcategory,
         public          NTAKVat         $vat,
-        public readonly float           $price,
+        public readonly int             $price,
         public readonly NTAKAmount      $amountType,
         public readonly float           $amount,
         public readonly int             $quantity,
@@ -93,11 +93,11 @@ class NTAKOrderItem
      * buildServiceFeeRequest
      *
      * @param  NTAKVat $vat
-     * @param  float   $price
+     * @param  int     $price
      * @param  Carbon  $when
      * @return array
      */
-    public static function buildServiceFeeRequest(NTAKVat $vat, float $price, Carbon $when): array
+    public static function buildServiceFeeRequest(NTAKVat $vat, int $price, Carbon $when): array
     {
         return (
             new static(

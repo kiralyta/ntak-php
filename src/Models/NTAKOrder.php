@@ -6,12 +6,15 @@ use Carbon\Carbon;
 use InvalidArgumentException;
 use Kiralyta\Ntak\Enums\NTAKOrderType;
 use Kiralyta\Ntak\Enums\NTAKPaymentType;
+use Kiralyta\Ntak\Enums\NTAKSubcategory;
 use Kiralyta\Ntak\Enums\NTAKVat;
 
 class NTAKOrder
 {
-    protected int $total;
-    protected int $totalWithDiscount;
+    protected int   $total;
+    protected int   $totalWithDiscount;
+    protected array $serviceFeeItems = [];
+    protected int   $serviceFeeTotal = 0;
 
     /**
      * __construct
@@ -52,6 +55,7 @@ class NTAKOrder
 
         $this->total = $this->calculateTotal();
         $this->totalWithDiscount = $this->calculateTotalWithDiscount();
+        $this->serviceFeeTotal = $this->calculateServiceFeeTotal();
     }
 
     /**
@@ -73,7 +77,9 @@ class NTAKOrder
         }
 
         if ($orderItems !== null && $this->serviceFee > 0) {
-            $orderItems = $this->buildServiceFeeRequests($orderItems);
+            $orderItems = $this->correctServiceFeeOrderItems(
+                $this->buildServiceFeeRequests($orderItems)
+            );
         }
 
         return $orderItems;
@@ -219,6 +225,16 @@ class NTAKOrder
     }
 
     /**
+     * calculateServiceFeeTotal
+     *
+     * @return int
+     */
+    protected function calculateServiceFeeTotal(): int
+    {
+        return $this->totalOfOrderItemsWithDiscount($this->orderItems) * ($this->serviceFee / 100);
+    }
+
+    /**
      * buildDiscountRequests
      *
      * @param  array $orderItems
@@ -288,11 +304,15 @@ class NTAKOrder
 
         $totalOfOrderItemsWithDiscount = $this->totalOfOrderItemsWithDiscount($orderItemsWithVat);
 
-        $orderItems[] = NTAKOrderItem::buildServiceFeeRequest(
+        $serviceFeeItem = NTAKOrderItem::buildServiceFeeRequest(
             $vat,
             $totalOfOrderItemsWithDiscount * $this->serviceFee / 100,
             $this->end
         );
+
+        $orderItems[] = $serviceFeeItem;
+
+        $this->serviceFeeItems[] = $serviceFeeItem;
 
         return $orderItems;
     }
@@ -361,6 +381,56 @@ class NTAKOrder
                 $this->orderItems
             ),
             SORT_REGULAR
+        );
+    }
+
+    /**
+     * correctServiceFeeOrderItems
+     *
+     * @param  array $orderItems
+     * @return array
+     */
+    protected function correctServiceFeeOrderItems(array $orderItems): array
+    {
+        $lastServiceFeeItem = end($this->serviceFeeItems);
+
+        $currentServiceFeeTotal = 0;
+        $correctedServiceFeeAmount = 0;
+
+        /** @var NTAKOrderItem $orderItem **/
+        foreach ($this->serviceFeeItems as $orderItem) {
+            if ($orderItem === $lastServiceFeeItem) {
+                $correctedServiceFeeAmount = $this->serviceFeeTotal - $currentServiceFeeTotal;
+            }
+
+            $currentServiceFeeTotal = $currentServiceFeeTotal + $orderItem['tetelOsszesito'];
+        }
+
+        return array_map(
+            function (array $orderItem) use ($lastServiceFeeItem, $correctedServiceFeeAmount) {
+                if ($lastServiceFeeItem === $orderItem) {
+                    $orderItem['tetelOsszesito'] = $orderItem['bruttoEgysegar'] = $correctedServiceFeeAmount;
+
+                    return $orderItem;
+                }
+
+                return $orderItem;
+            },
+            $orderItems
+        );
+    }
+
+    /**
+     * serviceFeeItems
+     *
+     * @param  array $orderItems
+     * @return array
+     */
+    protected function serviceFeeItems(array $orderItems): array
+    {
+        return array_filter(
+            $orderItems,
+            fn (NTAKOrderItem $orderItem) => $orderItem->subcategory === NTAKSubcategory::SZERVIZDIJ
         );
     }
 }
