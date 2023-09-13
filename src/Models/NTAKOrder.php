@@ -37,7 +37,7 @@ class NTAKOrder
         public readonly ?array           $orderItems = null,
         public readonly ?string          $ntakOrderId = null,
         public readonly ?Carbon          $start = null,
-        public readonly ?Carbon          $end = null,
+        public          ?Carbon          $end = null,
         public readonly bool             $isAtTheSpot = true,
         public readonly ?array           $payments = null,
         public readonly int              $discount = 0,
