@@ -56,6 +56,7 @@ class NTAKOrder
         $this->total = $this->calculateTotal();
         $this->totalWithDiscount = $this->calculateTotalWithDiscount();
         $this->serviceFeeTotal = $this->calculateServiceFeeTotal();
+        $this->end = $end ?: Carbon::now();
     }
 
     /**
