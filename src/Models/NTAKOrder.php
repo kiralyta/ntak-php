@@ -231,6 +231,10 @@ class NTAKOrder
      */
     protected function calculateServiceFeeTotal(): int
     {
+        if ($this->orderItems === null || $this->orderItems === []) {
+            return 0;
+        }
+
         return $this->totalOfOrderItemsWithDiscount($this->orderItems) * ($this->serviceFee / 100);
     }
 
