@@ -4,6 +4,7 @@ namespace Kiralyta\Ntak\Models;
 
 use Carbon\Carbon;
 use InvalidArgumentException;
+use Kiralyta\Ntak\Enums\NTAKCategory;
 use Kiralyta\Ntak\Enums\NTAKOrderType;
 use Kiralyta\Ntak\Enums\NTAKPaymentType;
 use Kiralyta\Ntak\Enums\NTAKSubcategory;
@@ -197,9 +198,9 @@ class NTAKOrder
     protected function calculateTotal(): int
     {
         if ($this->orderType !== NTAKOrderType::SZTORNO) {
-            $total = $this->totalOfOrderItems($this->orderItems);
-
-            return $total + $total * $this->serviceFee / 100;
+            $sumOfSimpleOrderItems = $this->totalOfOrderItems($this->getSimpleOrderItems($this->orderItems));
+            $sumOfSpecialOrderItems = $this->totalOfOrderItems($this->getSpecialOrderItems($this->orderItems));
+            return $sumOfSimpleOrderItems + round($sumOfSimpleOrderItems * $this->serviceFee / 100) + $sumOfSpecialOrderItems;
         }
 
         return 0;
@@ -217,9 +218,10 @@ class NTAKOrder
         }
 
         if ($this->orderType !== NTAKOrderType::SZTORNO) {
-            $total = $this->totalOfOrderItemsWithDiscount($this->orderItems);
+            $sumOfSimpleOrderItems = $this->totalOfOrderItemsWithDiscount($this->getSimpleOrderItems($this->orderItems));
+            $sumOfSpecialOrderItems = $this->totalOfOrderItems($this->getSpecialOrderItems($this->orderItems));
 
-            return $total + $total * $this->serviceFee / 100;
+            return $sumOfSimpleOrderItems + round($sumOfSimpleOrderItems * $this->serviceFee / 100) + $sumOfSpecialOrderItems;
         }
 
         return 0;
@@ -236,7 +238,7 @@ class NTAKOrder
             return 0;
         }
 
-        return $this->totalOfOrderItemsWithDiscount($this->orderItems) * ($this->serviceFee / 100);
+        return round($this->totalOfOrderItemsWithDiscount($this->getSimpleOrderItems($this->orderItems)) * ($this->serviceFee / 100));
     }
 
     /**
@@ -311,7 +313,7 @@ class NTAKOrder
 
         $serviceFeeItem = NTAKOrderItem::buildServiceFeeRequest(
             $vat,
-            $totalOfOrderItemsWithDiscount * $this->serviceFee / 100,
+            round($totalOfOrderItemsWithDiscount * $this->serviceFee / 100),
             $this->end
         );
 
@@ -347,7 +349,7 @@ class NTAKOrder
         return array_reduce(
             $orderItems,
             function (int $carry, NTAKOrderItem $orderItem) {
-                return $carry + $orderItem->price * $orderItem->quantity;
+                return $carry + round($orderItem->price * $orderItem->quantity);
             },
             0
         );
@@ -367,7 +369,7 @@ class NTAKOrder
                 $price = ($orderItem->price * $orderItem->quantity) *
                          (1 - $this->discount / 100);
 
-                return $carry + $price;
+                return $carry + round($price);
             },
             0
         );
@@ -383,7 +385,10 @@ class NTAKOrder
         return array_unique(
             array_map(
                 fn (NTAKOrderItem $orderItem) => $orderItem->vat,
-                $this->orderItems
+                array_filter(
+                    $this->orderItems,
+                    fn (NTAKOrderItem $orderItem) => $orderItem->vat !== NTAKVat::E_0
+                )
             ),
             SORT_REGULAR
         );
@@ -436,6 +441,34 @@ class NTAKOrder
         return array_filter(
             $orderItems,
             fn (NTAKOrderItem $orderItem) => $orderItem->subcategory === NTAKSubcategory::SZERVIZDIJ
+        );
+    }
+
+    /**
+     * getSimpleOrderItems
+     *
+     * @param  array $orderItems
+     * @return array of NTAKOrderItem needed discount and fee
+     */
+    protected function getSimpleOrderItems(array $orderItems): array
+    {
+        return array_filter(
+            $orderItems,
+            fn (NTAKOrderItem $orderItem) => $orderItem->category !== NTAKCategory::EGYEB
+        );
+    }
+
+    /**
+     * getSpecialOrderItems
+     *
+     * @param  array $orderItems
+     * @return array of NTAKOrderItem without discount and fee
+     */
+    protected function getSpecialOrderItems(array $orderItems): array
+    {
+        return array_filter(
+            $orderItems,
+            fn (NTAKOrderItem $orderItem) => $orderItem->category === NTAKCategory::EGYEB
         );
     }
 }

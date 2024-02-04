@@ -11,4 +11,5 @@ class TestCase extends FrameworkTestCase
     protected string $softwareRegNumber = 'TABTENDER';
     protected string $version = '1.4.21';
     protected string $certPath = __DIR__.'/../auth/pem.pem';
+    protected string $swaggerUrl = 'https://rms.tesztntak.hu';
 }
