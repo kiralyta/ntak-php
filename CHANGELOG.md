@@ -21,6 +21,7 @@ Updates should follow the [Keep a CHANGELOG](https://keepachangelog.com/) princi
 ## 2024-02-06
 ### Fixed
 - Request exception response null check
+- Remove duplicate entries from NTAKCategory::ALKMENTESITAL_NEM_HELYBEN
 ### Added
 - Swagger integration tests for values of ENUMs
 - fromName of ENUMs

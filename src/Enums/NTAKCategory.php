@@ -51,8 +51,6 @@ enum NTAKCategory: string
                 NTAKSubcategory::ROSTOS_UDITO,
                 NTAKSubcategory::SZENSAVAS_UDITO,
                 NTAKSubcategory::SZENSAVMENTES_UDITO,
-                NTAKSubcategory::SZENSAVAS_UDITO,
-                NTAKSubcategory::SZENSAVMENTES_UDITO,
                 NTAKSubcategory::ITALCSOMAG,
             ],
             NTAKCategory::ALKOHOLOSITAL => [
