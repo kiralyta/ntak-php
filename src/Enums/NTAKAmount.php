@@ -12,4 +12,5 @@ enum NTAKAmount: string
     case LITER = 'liter';
     case KILOGRAMM = 'kilogramm';
     case EGYSEG = 'egyseg';
+    case ADAG = 'adag';
 }
