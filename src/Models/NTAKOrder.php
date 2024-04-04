@@ -334,7 +334,7 @@ class NTAKOrder
     {
         return array_filter(
             $this->orderItems,
-            fn (NTAKOrderItem $orderItem) => $orderItem->vat === $vat
+            fn (NTAKOrderItem $orderItem) => $orderItem->vat === $vat && $orderItem->category !== NTAKCategory::EGYEB
         );
     }
 
@@ -387,7 +387,7 @@ class NTAKOrder
                 fn (NTAKOrderItem $orderItem) => $orderItem->vat,
                 array_filter(
                     $this->orderItems,
-                    fn (NTAKOrderItem $orderItem) => $orderItem->vat !== NTAKVat::E_0
+                    fn (NTAKOrderItem $orderItem) => $orderItem->category !== NTAKCategory::EGYEB
                 )
             ),
             SORT_REGULAR
