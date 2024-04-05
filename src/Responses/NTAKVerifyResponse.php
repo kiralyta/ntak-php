@@ -13,13 +13,15 @@ class NTAKVerifyResponse
      * @param  array            $unsuccessfulMessages
      * @param  array            $headerErrors
      * @param  NTAKVerifyStatus $status
+     * @param  string           $processId
      * @return void
      */
     public function __construct(
         public readonly array            $successfulMessages,
         public readonly array            $unsuccessfulMessages,
         public readonly array            $headerErrors,
-        public readonly NTAKVerifyStatus $status
+        public readonly NTAKVerifyStatus $status,
+        public readonly string           $processId
     ) {
     }
 

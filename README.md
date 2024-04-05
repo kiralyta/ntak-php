@@ -205,6 +205,7 @@ $response->headerErrors;         // Returns an array of the header errors
 
 > If you encounter an unsuccessful message, you should further examine [NTAKVerifyStatus](#ntakverifystatus).
 > It's recommended to wait at least 60 seconds before the first verification attempt of a processs ID.
+> You can verify multiple order with verifyALl(array of process ids) - which returning an array of ```NTAKVerifyResponse``` instance
 
 ## Enums
 

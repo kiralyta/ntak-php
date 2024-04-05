@@ -182,7 +182,48 @@ class NTAK
             successfulMessages:   $response['sikeresUzenetek'] ?? [],
             unsuccessfulMessages: $response['sikertelenUzenetek'] ?? [],
             headerErrors:         $response['fejlecHibak'] ?? [],
-            status:               NTAKVerifyStatus::from($response['statusz'])
+            status:               NTAKVerifyStatus::from($response['statusz']),
+            processId:            $response['feldolgozasAzonosito']
         );
+    }
+
+    /**
+     * verify all order
+     *
+     * @param  array $processIds
+     * @return array of NTAKVerifyResponse
+     */
+    public function verifyAll(
+        array $processIds
+    ): array {
+        $messageContent = [];
+        foreach ($processIds as $processId) {
+            $messageContent[] = [
+                'feldolgozasAzonosito' => $processId
+            ];
+        }
+
+        $message = [
+            'feldolgozasAzonositok' => $messageContent
+        ];
+
+        $responses = $this->client->message(
+            $message,
+            $this->when,
+            '/rms/ellenorzes'
+        )['uzenetValaszok'];
+
+        $verifyResponses = [];
+        foreach ($responses as $response) {
+            $verifyResponses[] = new NTAKVerifyResponse(
+                successfulMessages:   $response['sikeresUzenetek'] ?? [],
+                unsuccessfulMessages: $response['sikertelenUzenetek'] ?? [],
+                headerErrors:         $response['fejlecHibak'] ?? [],
+                status:               NTAKVerifyStatus::from($response['statusz']),
+                processId:            $response['feldolgozasAzonosito']
+            );
+        }
+
+        return $verifyResponses;
     }
 }
