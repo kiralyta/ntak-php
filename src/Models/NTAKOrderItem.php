@@ -22,6 +22,7 @@ class NTAKOrderItem
      * @param float           $amount
      * @param int             $quantity
      * @param Carbon          $when
+     * @param bool            $isDrs
      *
      * @return void
      */
@@ -34,7 +35,8 @@ class NTAKOrderItem
         public readonly NTAKAmount      $amountType,
         public readonly float           $amount,
         public readonly int             $quantity,
-        public readonly Carbon          $when
+        public readonly Carbon          $when,
+        public readonly bool            $isDrs = false
     ) {
     }
 
@@ -50,17 +52,22 @@ class NTAKOrderItem
             ?  NTAKVat::C_27
             : $this->vat;
 
+        $drsSum = 0;
+        if ($this->isDrs) {
+            $drsSum = $this->quantity * 50;
+        }
+
         return [
             'megnevezes'        => $this->name,
             'fokategoria'       => $this->category->name,
             'alkategoria'       => $this->subcategory->name,
             'afaKategoria'      => $this->vat->name,
-            'bruttoEgysegar'    => $this->price,
+            'bruttoEgysegar'    => $this->price - ($drsSum / $this->quantity),
             'mennyisegiEgyseg'  => $this->amountType->name,
             'mennyiseg'         => round($this->amount, 2),
             'tetelszam'         => $this->quantity,
             'rendelesIdopontja' => $this->when->timezone('Europe/Budapest')->toIso8601String(),
-            'tetelOsszesito'    => $this->quantity * $this->price,
+            'tetelOsszesito'    => $this->quantity * $this->price - $drsSum,
         ];
     }
 
@@ -110,6 +117,31 @@ class NTAKOrderItem
                 amount:      1,
                 quantity:    1,
                 when:        $when
+            )
+        )->buildRequest();
+    }
+
+    /**
+     * buildDrsRequest
+     *
+     * @param  NTAKVat $vat
+     * @param  int     $price
+     * @param  Carbon  $when
+     * @return array
+     */
+    public static function buildDrsRequest(int $quantity, Carbon $when): array
+    {
+        return (
+            new static(
+                name: 'DRS',
+                category: NTAKCategory::EGYEB,
+                subcategory: NTAKSubcategory::KORNYEZETBARAT_CSOMAGOLAS,
+                vat: NTAKVat::E_0,
+                price: 50,
+                amountType: NTAKAmount::DARAB,
+                amount: 1,
+                quantity: $quantity,
+                when: $when
             )
         )->buildRequest();
     }

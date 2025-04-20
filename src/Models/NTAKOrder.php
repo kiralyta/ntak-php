@@ -67,12 +67,29 @@ class NTAKOrder
      */
     public function buildOrderItems(): ?array
     {
+        $drsQuantity = array_reduce(
+            $this->orderItems,
+            function (int $carry, NTAKOrderItem $orderItem) {
+                $quantity = 0;
+                if ($orderItem->isDrs) {
+                    $quantity = $orderItem->quantity;
+                }
+
+                return $carry + $quantity;
+            },
+            0
+        );
+
         $orderItems = $this->orderItems === null
             ? null
             : array_map(
                 fn (NTAKOrderItem $orderItem) => $orderItem->buildRequest($this->isAtTheSpot),
                 $this->orderItems
             );
+
+        if ($orderItems !== null && $drsQuantity > 0) {
+            $orderItems[] = NTAKOrderItem::buildDrsRequest($drsQuantity, $this->end);
+        }
 
         if ($orderItems !== null && $this->discount > 0) {
             $orderItems = $this->buildDiscountRequests($orderItems);
