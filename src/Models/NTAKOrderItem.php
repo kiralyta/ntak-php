@@ -124,8 +124,7 @@ class NTAKOrderItem
     /**
      * buildDrsRequest
      *
-     * @param  NTAKVat $vat
-     * @param  int     $price
+     * @param  int     $quantity
      * @param  Carbon  $when
      * @return array
      */
