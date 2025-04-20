@@ -3,18 +3,30 @@
 Welcome to my little package, that helps you make NTAK RMS requests like a boss.
 
 Table of Contents:
-- [Installation](#installation)
-- [Usage](#usage)
-    - [Create an API Client Instance](#create-an-api-client-instance)
-    - [Create an Order Item Instance](#create-an-order-item-instance)
-    - [Create a Payment Instance](#create-a-payment-instance)
-    - [Create an Order Instance](#create-an-order-instance)
-    - [Store, Update, Destroy Order (Rendelésösszesítő)](#store-update-destroy-order-rendelésösszesítő)
-    - [Close Day (Napzárás)](#close-day-napzárás)
-    - [Verify (Ellenőrzés)](#verify-ellenőrzés)
-- [Enums](#enums)
-- [Contribution](#contribution)
-- [Last Words](#last-words)
+- [NTAK RMS PHP API / SDK](#ntak-rms-php-api--sdk)
+  - [Installation](#installation)
+  - [Usage](#usage)
+    - [Instances](#instances)
+      - [Create an API Client Instance](#create-an-api-client-instance)
+      - [Create an Order Item Instance](#create-an-order-item-instance)
+      - [Create a Payment Instance](#create-a-payment-instance)
+      - [Create an Order Instance](#create-an-order-instance)
+    - [Messages (Requests)](#messages-requests)
+      - [Store, Update, Destroy Order (Rendelésösszesítő)](#store-update-destroy-order-rendelésösszesítő)
+      - [Close Day (Napzárás)](#close-day-napzárás)
+      - [Verify (Ellenőrzés)](#verify-ellenőrzés)
+  - [Enums](#enums)
+    - [NTAKAmount](#ntakamount)
+    - [NTAKCategory](#ntakcategory)
+    - [NTAKSubcategory](#ntaksubcategory)
+    - [NTAKDayType](#ntakdaytype)
+    - [NTAKOrderType](#ntakordertype)
+    - [NTAKPaymentType](#ntakpaymenttype)
+    - [NTAKVat](#ntakvat)
+    - [NTAKVerifyStatus](#ntakverifystatus)
+  - [Contribution](#contribution)
+    - [Run Tests](#run-tests)
+  - [Last Words](#last-words)
 
 ## Installation
 
@@ -76,7 +88,11 @@ $orderItem = new NTAKOrderItem(
     amountType:      NTAKAmount::LITER,
     amount:          0.04,
     quantity:        2,
-    when:            Carbon::now()
+    when:            Carbon::now(),
+
+    // DRS is handled automatically
+    // You don't have to manually create the DRS NTAKOrderItem with vat 0
+    isDrs:           false
 );
 ```
 
