@@ -31,7 +31,7 @@ class NTAKPayment
         $request = [
             'fizetesiMod'       => $this->paymentType->name,
             'fizetettOsszegHUF' => ! in_array($this->paymentType, [NTAKPaymentType::KESZPENZHUF, NTAKPaymentType::KESZPENZEUR])
-                ? $this->total
+                ? round($this->total)
                 : $rounded = (int) (round($this->total / 5) * 5)
         ];
 
