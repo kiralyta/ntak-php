@@ -31,7 +31,7 @@ class NTAKOrderItem
         public readonly NTAKCategory    $category,
         public readonly NTAKSubcategory $subcategory,
         public          NTAKVat         $vat,
-        public readonly int             $price,
+        public readonly float           $price,
         public readonly NTAKAmount      $amountType,
         public readonly float           $amount,
         public readonly int             $quantity,
@@ -67,7 +67,7 @@ class NTAKOrderItem
             'mennyiseg'         => round($this->amount, 2),
             'tetelszam'         => $this->quantity,
             'rendelesIdopontja' => $this->when->timezone('Europe/Budapest')->toIso8601String(),
-            'tetelOsszesito'    => $this->quantity * $this->price - $drsSum,
+            'tetelOsszesito'    => round($this->quantity * $this->price - $drsSum),
         ];
     }
 
