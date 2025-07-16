@@ -16,7 +16,7 @@ class NTAKPayment
      */
     public function __construct(
         public readonly NTAKPaymentType $paymentType,
-        public readonly int             $total
+        public readonly float           $total
     ) {
     }
 

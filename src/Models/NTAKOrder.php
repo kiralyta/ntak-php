@@ -54,9 +54,9 @@ class NTAKOrder
             $this->validateIfNotStorno();
         }
 
-        $this->total = round($this->calculateTotal());
-        $this->totalWithDiscount = round($this->calculateTotalWithDiscount());
-        $this->serviceFeeTotal = round($this->calculateServiceFeeTotal());
+        $this->total = $this->calculateTotal();
+        $this->totalWithDiscount = $this->calculateTotalWithDiscount();
+        $this->serviceFeeTotal = $this->calculateServiceFeeTotal();
         $this->end = $end ?: Carbon::now();
     }
 
@@ -212,12 +212,12 @@ class NTAKOrder
      *
      * @return int
      */
-    protected function calculateTotal(): float
+    protected function calculateTotal(): int
     {
         if ($this->orderType !== NTAKOrderType::SZTORNO) {
             $sumOfSimpleOrderItems = $this->totalOfOrderItems($this->getSimpleOrderItems($this->orderItems));
             $sumOfSpecialOrderItems = $this->totalOfOrderItems($this->getSpecialOrderItems($this->orderItems));
-            return $sumOfSimpleOrderItems + $sumOfSimpleOrderItems * $this->serviceFee / 100 + $sumOfSpecialOrderItems;
+            return $sumOfSimpleOrderItems + round($sumOfSimpleOrderItems * $this->serviceFee / 100) + $sumOfSpecialOrderItems;
         }
 
         return 0;
@@ -228,7 +228,7 @@ class NTAKOrder
      *
      * @return int
      */
-    protected function calculateTotalWithDiscount(): float
+    protected function calculateTotalWithDiscount(): int
     {
         if ($this->discount === 0) {
             return $this->total;
@@ -238,7 +238,7 @@ class NTAKOrder
             $sumOfSimpleOrderItems = $this->totalOfOrderItemsWithDiscount($this->getSimpleOrderItems($this->orderItems));
             $sumOfSpecialOrderItems = $this->totalOfOrderItems($this->getSpecialOrderItems($this->orderItems));
 
-            return $sumOfSimpleOrderItems + $sumOfSimpleOrderItems * $this->serviceFee / 100 + $sumOfSpecialOrderItems;
+            return $sumOfSimpleOrderItems + round($sumOfSimpleOrderItems * $this->serviceFee / 100) + $sumOfSpecialOrderItems;
         }
 
         return 0;
@@ -247,15 +247,15 @@ class NTAKOrder
     /**
      * calculateServiceFeeTotal
      *
-     * @return float
+     * @return int
      */
-    protected function calculateServiceFeeTotal(): float
+    protected function calculateServiceFeeTotal(): int
     {
         if ($this->orderItems === null || $this->orderItems === []) {
             return 0;
         }
 
-        return $this->totalOfOrderItemsWithDiscount($this->getSimpleOrderItems($this->orderItems)) * ($this->serviceFee / 100);
+        return round($this->totalOfOrderItemsWithDiscount($this->getSimpleOrderItems($this->orderItems)) * ($this->serviceFee / 100));
     }
 
     /**
@@ -351,7 +351,7 @@ class NTAKOrder
     {
         return array_filter(
             $this->orderItems,
-            fn (NTAKOrderItem $orderItem) => $orderItem->vat === $vat // && $orderItem->category !== NTAKCategory::EGYEB
+            fn (NTAKOrderItem $orderItem) => $orderItem->vat === $vat && !($orderItem->category === NTAKCategory::EGYEB && $orderItem->subcategory === NTAKSubcategory::EGYEB)
         );
     }
 
@@ -361,12 +361,12 @@ class NTAKOrder
      * @param  array $orderItems
      * @return int
      */
-    protected function totalOfOrderItems(array $orderItems): float
+    protected function totalOfOrderItems(array $orderItems): int
     {
         return array_reduce(
             $orderItems,
-            function (float $carry, NTAKOrderItem $orderItem) {
-                return $carry + $orderItem->price * $orderItem->quantity;
+            function (int $carry, NTAKOrderItem $orderItem) {
+                return $carry + round($orderItem->price * $orderItem->quantity);
             },
             0
         );
@@ -376,17 +376,17 @@ class NTAKOrder
      * totalOfOrderItemsWithDiscount
      *
      * @param  array|NTAKOrderItem[] $orderItems
-     * @return float
+     * @return int
      */
-    protected function totalOfOrderItemsWithDiscount(array $orderItems): float
+    protected function totalOfOrderItemsWithDiscount(array $orderItems): int
     {
         return array_reduce(
             $orderItems,
-            function (float $carry, NTAKOrderItem $orderItem) {
+            function (int $carry, NTAKOrderItem $orderItem) {
                 $price = ($orderItem->price * $orderItem->quantity) *
                          (1 - $this->discount / 100);
 
-                return $carry + $price;
+                return $carry + round($price);
             },
             0
         );
@@ -404,7 +404,7 @@ class NTAKOrder
                 fn (NTAKOrderItem $orderItem) => $orderItem->vat,
                 array_filter(
                     $this->orderItems,
-                    fn (NTAKOrderItem $orderItem) => $orderItem->category !== NTAKCategory::EGYEB
+                    fn (NTAKOrderItem $orderItem) => !($orderItem->category === NTAKCategory::EGYEB && $orderItem->subcategory === NTAKSubcategory::EGYEB)
                 )
             ),
             SORT_REGULAR
@@ -471,7 +471,7 @@ class NTAKOrder
     {
         return array_filter(
             $orderItems,
-            fn (NTAKOrderItem $orderItem) => $orderItem->category !== NTAKCategory::EGYEB
+            fn (NTAKOrderItem $orderItem) => !($orderItem->category === NTAKCategory::EGYEB && $orderItem->subcategory === NTAKSubcategory::EGYEB)
         );
     }
 
@@ -485,7 +485,7 @@ class NTAKOrder
     {
         return array_filter(
             $orderItems,
-            fn (NTAKOrderItem $orderItem) => $orderItem->category === NTAKCategory::EGYEB
+            fn (NTAKOrderItem $orderItem) => ($orderItem->category === NTAKCategory::EGYEB && $orderItem->subcategory === NTAKSubcategory::EGYEB)
         );
     }
 }
