@@ -54,9 +54,9 @@ class NTAKOrder
             $this->validateIfNotStorno();
         }
 
-        $this->total = $this->calculateTotal();
-        $this->totalWithDiscount = $this->calculateTotalWithDiscount();
-        $this->serviceFeeTotal = $this->calculateServiceFeeTotal();
+        $this->total = round($this->calculateTotal());
+        $this->totalWithDiscount = round($this->calculateTotalWithDiscount());
+        $this->serviceFeeTotal = round($this->calculateServiceFeeTotal());
         $this->end = $end ?: Carbon::now();
     }
 
@@ -212,12 +212,12 @@ class NTAKOrder
      *
      * @return int
      */
-    protected function calculateTotal(): int
+    protected function calculateTotal(): float
     {
         if ($this->orderType !== NTAKOrderType::SZTORNO) {
             $sumOfSimpleOrderItems = $this->totalOfOrderItems($this->getSimpleOrderItems($this->orderItems));
             $sumOfSpecialOrderItems = $this->totalOfOrderItems($this->getSpecialOrderItems($this->orderItems));
-            return $sumOfSimpleOrderItems + round($sumOfSimpleOrderItems * $this->serviceFee / 100) + $sumOfSpecialOrderItems;
+            return $sumOfSimpleOrderItems + $sumOfSimpleOrderItems * $this->serviceFee / 100 + $sumOfSpecialOrderItems;
         }
 
         return 0;
@@ -228,7 +228,7 @@ class NTAKOrder
      *
      * @return int
      */
-    protected function calculateTotalWithDiscount(): int
+    protected function calculateTotalWithDiscount(): float
     {
         if ($this->discount === 0) {
             return $this->total;
@@ -238,7 +238,7 @@ class NTAKOrder
             $sumOfSimpleOrderItems = $this->totalOfOrderItemsWithDiscount($this->getSimpleOrderItems($this->orderItems));
             $sumOfSpecialOrderItems = $this->totalOfOrderItems($this->getSpecialOrderItems($this->orderItems));
 
-            return $sumOfSimpleOrderItems + round($sumOfSimpleOrderItems * $this->serviceFee / 100) + $sumOfSpecialOrderItems;
+            return $sumOfSimpleOrderItems + $sumOfSimpleOrderItems * $this->serviceFee / 100 + $sumOfSpecialOrderItems;
         }
 
         return 0;
@@ -247,15 +247,15 @@ class NTAKOrder
     /**
      * calculateServiceFeeTotal
      *
-     * @return int
+     * @return float
      */
-    protected function calculateServiceFeeTotal(): int
+    protected function calculateServiceFeeTotal(): float
     {
         if ($this->orderItems === null || $this->orderItems === []) {
             return 0;
         }
 
-        return round($this->totalOfOrderItemsWithDiscount($this->getSimpleOrderItems($this->orderItems)) * ($this->serviceFee / 100));
+        return $this->totalOfOrderItemsWithDiscount($this->getSimpleOrderItems($this->orderItems)) * ($this->serviceFee / 100);
     }
 
     /**
@@ -361,12 +361,12 @@ class NTAKOrder
      * @param  array $orderItems
      * @return int
      */
-    protected function totalOfOrderItems(array $orderItems): int
+    protected function totalOfOrderItems(array $orderItems): float
     {
         return array_reduce(
             $orderItems,
-            function (int $carry, NTAKOrderItem $orderItem) {
-                return $carry + round($orderItem->price * $orderItem->quantity);
+            function (float $carry, NTAKOrderItem $orderItem) {
+                return $carry + $orderItem->price * $orderItem->quantity;
             },
             0
         );
@@ -376,17 +376,17 @@ class NTAKOrder
      * totalOfOrderItemsWithDiscount
      *
      * @param  array|NTAKOrderItem[] $orderItems
-     * @return int
+     * @return float
      */
-    protected function totalOfOrderItemsWithDiscount(array $orderItems): int
+    protected function totalOfOrderItemsWithDiscount(array $orderItems): float
     {
         return array_reduce(
             $orderItems,
-            function (int $carry, NTAKOrderItem $orderItem) {
+            function (float $carry, NTAKOrderItem $orderItem) {
                 $price = ($orderItem->price * $orderItem->quantity) *
                          (1 - $this->discount / 100);
 
-                return $carry + round($price);
+                return $carry + $price;
             },
             0
         );
