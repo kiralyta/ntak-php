@@ -252,7 +252,7 @@ class NTAKOrder
             return array_reduce(
                 $this->orderItems,
                 function (float $carry, NTAKOrderItem $orderItem) {
-                    return $orderItem->roundedSum();
+                    return $carry + $orderItem->roundedSum();
                 },
                 0
             );
