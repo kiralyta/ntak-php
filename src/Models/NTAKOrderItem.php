@@ -10,6 +10,8 @@ use Kiralyta\Ntak\Enums\NTAKVat;
 
 class NTAKOrderItem
 {
+    protected int $drsSum;
+
     /**
      * __construct
      *
@@ -38,6 +40,9 @@ class NTAKOrderItem
         public readonly Carbon          $when,
         public readonly bool            $isDrs = false
     ) {
+        $this->drsSum = $isDrs
+            ? $this->quantity * 50
+            : 0;
     }
 
     /**
@@ -52,22 +57,17 @@ class NTAKOrderItem
             ?  NTAKVat::C_27
             : $this->vat;
 
-        $drsSum = 0;
-        if ($this->isDrs) {
-            $drsSum = $this->quantity * 50;
-        }
-
         return [
             'megnevezes'        => $this->name,
             'fokategoria'       => $this->category->name,
             'alkategoria'       => $this->subcategory->name,
             'afaKategoria'      => $this->vat->name,
-            'bruttoEgysegar'    => $this->price - ($drsSum / $this->quantity),
+            'bruttoEgysegar'    => $this->price - ($this->drsSum / $this->quantity),
             'mennyisegiEgyseg'  => $this->amountType->name,
             'mennyiseg'         => round($this->amount, 2),
             'tetelszam'         => $this->quantity,
             'rendelesIdopontja' => $this->when->timezone('Europe/Budapest')->toIso8601String(),
-            'tetelOsszesito'    => round($this->quantity * $this->price - $drsSum),
+            'tetelOsszesito'    => $this->roundedSum(),
         ];
     }
 
@@ -143,5 +143,10 @@ class NTAKOrderItem
                 when: $when
             )
         )->buildRequest();
+    }
+
+    public function roundedSum(): int
+    {
+        return round($this->quantity * $this->price - $this->drsSum);
     }
 }

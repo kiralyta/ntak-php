@@ -14,6 +14,7 @@ class NTAKOrder
 {
     protected int   $total;
     protected int   $totalWithDiscount;
+    protected int   $totalOfProducts;
     protected array $serviceFeeItems = [];
     protected int   $serviceFeeTotal = 0;
 
@@ -56,6 +57,7 @@ class NTAKOrder
 
         $this->total = round($this->calculateTotal());
         $this->totalWithDiscount = round($this->calculateTotalWithDiscount());
+        $this->totalOfProducts = round($this->calculateTotalOfProducts());
         $this->serviceFeeTotal = round($this->calculateServiceFeeTotal());
         $this->end = $end ?: Carbon::now();
     }
@@ -244,6 +246,21 @@ class NTAKOrder
         return 0;
     }
 
+    protected function calculateTotalOfProducts(): float
+    {
+        if ($this->orderType !== NTAKOrderType::SZTORNO) {
+            return array_reduce(
+                $this->orderItems,
+                function (float $carry, NTAKOrderItem $orderItem) {
+                    return $orderItem->roundedSum();
+                },
+                0
+            );
+        }
+
+        return 0;
+    }
+
     /**
      * calculateServiceFeeTotal
      *
@@ -427,7 +444,8 @@ class NTAKOrder
         /** @var NTAKOrderItem $orderItem **/
         foreach ($this->serviceFeeItems as $orderItem) {
             if ($orderItem === $lastServiceFeeItem) {
-                $correctedServiceFeeAmount = $this->serviceFeeTotal - $currentServiceFeeTotal;
+                // $correctedServiceFeeAmount = $this->serviceFeeTotal - $currentServiceFeeTotal;
+                $correctedServiceFeeAmount = $this->totalWithDiscount - $currentServiceFeeTotal - $this->totalOfProducts;
             }
 
             $currentServiceFeeTotal = $currentServiceFeeTotal + $orderItem['tetelOsszesito'];
