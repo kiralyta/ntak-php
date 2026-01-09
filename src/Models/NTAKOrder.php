@@ -369,18 +369,17 @@ class NTAKOrder
     protected function addServiceFeeRequestByVat(array $orderItems, NTAKVat $vat, int $drsQuantity): array
     {
         $orderItemsWithVat = $this->orderItemsWithVat($vat);
-
+        // This now only contains non-DRS items
         $totalOfOrderItemsWithDiscount = $this->totalOfOrderItemsWithDiscount($orderItemsWithVat);
 
         $serviceFeeItem = NTAKOrderItem::buildServiceFeeRequest(
             $vat,
-            round(($totalOfOrderItemsWithDiscount - $drsQuantity * NTAK::drsAmount) * $this->serviceFee / 100),
+            round($totalOfOrderItemsWithDiscount * $this->serviceFee / 100),
             $this->end
         );
 
-        $orderItems[] = $serviceFeeItem;
-
         $this->serviceFeeItems[] = $serviceFeeItem;
+        $orderItems[] = $serviceFeeItem;
 
         return $orderItems;
     }
@@ -463,33 +462,40 @@ class NTAKOrder
      */
     protected function correctServiceFeeOrderItems(array $orderItems): array
     {
-        $lastServiceFeeItem = end($this->serviceFeeItems);
-
-        $currentServiceFeeTotal = 0;
-        $correctedServiceFeeAmount = 0;
-
-        /** @var NTAKOrderItem $orderItem **/
-        foreach ($this->serviceFeeItems as $orderItem) {
-            if ($orderItem === $lastServiceFeeItem) {
-                // $correctedServiceFeeAmount = $this->serviceFeeTotal - $currentServiceFeeTotal;
-                $correctedServiceFeeAmount = $this->totalWithDiscount - $currentServiceFeeTotal - $this->totalOfProducts;
-            }
-
-            $currentServiceFeeTotal = $currentServiceFeeTotal + $orderItem['tetelOsszesito'];
+        if (empty($this->serviceFeeItems)) {
+            return $orderItems;
         }
 
-        return array_map(
-            function (array $orderItem) use ($lastServiceFeeItem, $correctedServiceFeeAmount) {
-                if ($lastServiceFeeItem === $orderItem) {
-                    $orderItem['tetelOsszesito'] = $orderItem['bruttoEgysegar'] = $correctedServiceFeeAmount;
+        // 1. Calculate the target service fee amount
+        // (Total bill minus the cost of all products including DRS)
+        $targetServiceFeeTotal = $this->totalWithDiscount - $this->totalOfProducts;
 
-                    return $orderItem;
-                }
+        // 2. See what we have generated so far in the loop
+        $generatedServiceFeeTotal = array_sum(array_column($this->serviceFeeItems, 'tetelOsszesito'));
 
-                return $orderItem;
-            },
-            $orderItems
-        );
+        // 3. Find the difference (rounding error)
+        $difference = $targetServiceFeeTotal - $generatedServiceFeeTotal;
+
+        // 4. Apply the difference to the last service fee item in the full order list
+        // We identify the last item by comparing the VAT of the last item in serviceFeeItems
+        $lastServiceFeeRef = end($this->serviceFeeItems);
+
+        foreach ($orderItems as &$item) {
+            // Match by subcategory and VAT to find the specific line item
+            if (
+                ($item['alkategoria'] ?? null) === NTAKSubcategory::SZERVIZDIJ->name &&
+                $item['afaKategoria'] === $lastServiceFeeRef['afaKategoria']
+            ) {
+                // We apply the difference here
+                $item['bruttoEgysegar'] += $difference;
+                $item['tetelOsszesito'] += $difference;
+
+                // Break so we only apply it to the last one
+                break;
+            }
+        }
+
+        return $orderItems;
     }
 
     /**
@@ -516,7 +522,9 @@ class NTAKOrder
     {
         return array_filter(
             $orderItems,
-            fn (NTAKOrderItem $orderItem) => !($orderItem->category === NTAKCategory::EGYEB && $orderItem->subcategory === NTAKSubcategory::EGYEB)
+            fn(NTAKOrderItem $orderItem) =>
+            !($orderItem->category === NTAKCategory::EGYEB && $orderItem->subcategory === NTAKSubcategory::EGYEB)
+                && !$orderItem->isDrs // Add this
         );
     }
 
