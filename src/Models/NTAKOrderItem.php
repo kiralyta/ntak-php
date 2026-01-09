@@ -7,6 +7,7 @@ use Kiralyta\Ntak\Enums\NTAKAmount;
 use Kiralyta\Ntak\Enums\NTAKCategory;
 use Kiralyta\Ntak\Enums\NTAKSubcategory;
 use Kiralyta\Ntak\Enums\NTAKVat;
+use Kiralyta\Ntak\NTAK;
 
 class NTAKOrderItem
 {
@@ -41,7 +42,7 @@ class NTAKOrderItem
         public readonly bool            $isDrs = false
     ) {
         $this->drsSum = $isDrs
-            ? $this->quantity * 50
+            ? $this->quantity * NTAK::drsAmount
             : 0;
     }
 
@@ -136,7 +137,7 @@ class NTAKOrderItem
                 category: NTAKCategory::EGYEB,
                 subcategory: NTAKSubcategory::KORNYEZETBARAT_CSOMAGOLAS,
                 vat: NTAKVat::E_0,
-                price: 50,
+                price: NTAK::drsAmount,
                 amountType: NTAKAmount::DARAB,
                 amount: 1,
                 quantity: $quantity,

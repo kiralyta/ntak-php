@@ -9,6 +9,7 @@ use Kiralyta\Ntak\Enums\NTAKOrderType;
 use Kiralyta\Ntak\Enums\NTAKPaymentType;
 use Kiralyta\Ntak\Enums\NTAKSubcategory;
 use Kiralyta\Ntak\Enums\NTAKVat;
+use Kiralyta\Ntak\NTAK;
 
 class NTAKOrder
 {
@@ -262,6 +263,27 @@ class NTAKOrder
     }
 
     /**
+     * Get the total quantity of DRS items for a specific VAT category.
+     *
+     * @param  NTAKVat $vat
+     * @return int
+     */
+    public function drsQuantityByVat(NTAKVat $vat): int
+    {
+        return array_reduce(
+            $this->orderItems,
+            function (int $carry, NTAKOrderItem $orderItem) use ($vat) {
+                if ($orderItem->isDrs && $orderItem->vat === $vat) {
+                    return $carry + $orderItem->quantity;
+                }
+
+                return $carry;
+            },
+            0
+        );
+    }
+
+    /**
      * calculateServiceFeeTotal
      *
      * @return float
@@ -303,7 +325,11 @@ class NTAKOrder
         $vats = $this->uniqueVats();
 
         foreach ($vats as $vat) {
-            $orderItems = $this->addServiceFeeRequestByVat($orderItems, $vat);
+            $orderItems = $this->addServiceFeeRequestByVat(
+                orderItems: $orderItems,
+                vat: $vat,
+                drsQuantity: $this->drsQuantityByVat($vat)
+            );
         }
 
         return $orderItems;
@@ -337,9 +363,10 @@ class NTAKOrder
      *
      * @param  array   $orderItems
      * @param  NTAKVat $vat
+     * @param  int     $drsQuantity
      * @return array
      */
-    protected function addServiceFeeRequestByVat(array $orderItems, NTAKVat $vat): array
+    protected function addServiceFeeRequestByVat(array $orderItems, NTAKVat $vat, int $drsQuantity): array
     {
         $orderItemsWithVat = $this->orderItemsWithVat($vat);
 
@@ -347,7 +374,7 @@ class NTAKOrder
 
         $serviceFeeItem = NTAKOrderItem::buildServiceFeeRequest(
             $vat,
-            round($totalOfOrderItemsWithDiscount * $this->serviceFee / 100),
+            round(($totalOfOrderItemsWithDiscount - $drsQuantity * NTAK::drsAmount) * $this->serviceFee / 100),
             $this->end
         );
 
