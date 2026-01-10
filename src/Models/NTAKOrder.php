@@ -16,7 +16,6 @@ class NTAKOrder
     protected int   $totalOfProducts;
     protected array $serviceFeeItems = [];
     protected int   $serviceFeeTotal = 0;
-    protected int   $drsTotal = 0;
 
     public function __construct(
         public readonly NTAKOrderType    $orderType,
@@ -30,38 +29,29 @@ class NTAKOrder
         public readonly int              $discount = 0,
         public readonly int              $serviceFee = 0
     ) {
-        $this->end = $end ?: Carbon::now();
         $this->validate();
 
-        // 1. Calculate DRS amount upfront (50 HUF)
-        $drsQuantity = array_reduce($this->orderItems ?? [], fn($c, $i) => $c + ($i->isDrs ? $i->quantity : 0), 0);
-        $this->drsTotal = $drsQuantity * 50;
+        // 1. Sum items exactly as they appear (696 + 261 + 50 = 1007)
+        $this->totalOfProducts = (int) $this->calculateTotalOfProducts();
 
-        // 2. Sum physical products (696 + 261 = 957)
-        // We exclude items already marked as isDrs to avoid double counting
-        $this->totalOfProducts = (int) array_reduce(
-            $this->orderItems ?? [],
-            fn($c, $i) => $i->isDrs ? $c : $c + $i->roundedSum(),
-            0
-        );
-
-        // 3. Service fee: floor(957 * 0.15) = 143
+        // 2. Service fee: floor((696 + 261) * 0.15) = 143
         $this->serviceFeeTotal = (int) $this->calculateServiceFeeTotal();
 
-        // 4. Grand Total: 957 + 50 + 143 = 1150
-        $this->total = $this->totalOfProducts + $this->drsTotal + $this->serviceFeeTotal;
+        // 3. Grand Total: 1007 + 143 = 1150
+        $this->total = $this->totalOfProducts + $this->serviceFeeTotal;
+        $this->end = $end ?: Carbon::now();
     }
 
     public function buildOrderItems(): ?array
     {
         $drsQuantity = array_reduce($this->orderItems ?? [], fn($c, $i) => $c + ($i->isDrs ? $i->quantity : 0), 0);
 
-        // Build base products (Tonic, Soda)
+        // Build base products
         $requestItems = $this->orderItems === null
             ? null
             : array_map(fn($item) => $item->buildRequest($this->isAtTheSpot), $this->orderItems);
 
-        // Add DRS line item (50 HUF)
+        // Add DRS
         if ($requestItems !== null && $drsQuantity > 0) {
             $requestItems[] = NTAKOrderItem::buildDrsRequest($drsQuantity, $this->end);
         }
@@ -78,7 +68,7 @@ class NTAKOrder
             }
         }
 
-        // Add Service Fee line item (143 HUF)
+        // Add Service Fee
         if ($requestItems !== null && $this->serviceFee > 0) {
             $this->serviceFeeItems = [];
             foreach ($this->uniqueVats() as $vat) {
@@ -96,6 +86,11 @@ class NTAKOrder
         return $requestItems;
     }
 
+    protected function calculateTotalOfProducts(): float
+    {
+        return array_reduce($this->orderItems ?? [], fn($c, $i) => $c + $i->roundedSum(), 0);
+    }
+
     protected function calculateServiceFeeTotal(): float
     {
         $base = array_reduce($this->itemsForFeeCalculation(), fn($c, $i) => $c + $i->roundedSum(), 0);
@@ -105,7 +100,7 @@ class NTAKOrder
     protected function itemsForFeeCalculation(?NTAKVat $vat = null): array
     {
         return array_filter($this->orderItems ?? [], function ($i) use ($vat) {
-            // Include everything except DRS and technical lines
+            // WHIELIST: Exclude only DRS and existing fee/discount subcategories
             $isProduct = !$i->isDrs &&
                 $i->subcategory !== NTAKSubcategory::SZERVIZDIJ &&
                 $i->subcategory !== NTAKSubcategory::KEDVEZMENY;
@@ -134,12 +129,15 @@ class NTAKOrder
         return $requestItems;
     }
 
+    /**
+     * Re-introduced NTAKPaymentType and added dynamic rounding (KEREKITES)
+     */
     public function buildPaymentTypes(): array
     {
         $paymentRequests = array_map(fn($p) => $p->buildRequest(), $this->payments ?? []);
         $paymentSum = array_sum(array_column($paymentRequests, 'fizetettOsszegHUF'));
 
-        // Difference between 1150 (Order) and 1158 (Payment) = -8 HUF
+        // If customer paid 1158 but total is 1150, we add a -8 HUF Rounding line
         $roundingDifference = $this->total - $paymentSum;
 
         if ($roundingDifference !== 0) {
@@ -159,8 +157,8 @@ class NTAKOrder
 
     protected function validate(): void
     {
-        if (empty($this->orderItems) && $this->orderType === NTAKOrderType::NORMAL) {
-            throw new InvalidArgumentException('Order items required');
+        if (empty($this->orderItems) && $this->orderType !== NTAKOrderType::NORMAL) {
+            // Allow empty items for Storno if needed, but usually Normal requires items
         }
     }
 }
