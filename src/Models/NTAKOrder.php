@@ -20,8 +20,6 @@ class NTAKOrder
     protected int   $serviceFeeTotal = 0;
 
     /**
-     * __construct
-     *
      * @param  NTAKOrderType            $orderType
      * @param  string                   $orderId
      * @param  array|NTAKOrderItem[]    $orderItems
@@ -32,7 +30,6 @@ class NTAKOrder
      * @param  array|null|NTAKPayment[] $payments
      * @param  int                      $discount
      * @param  int                      $serviceFee
-     * @return void
      */
     public function __construct(
         public readonly NTAKOrderType    $orderType,
@@ -56,29 +53,26 @@ class NTAKOrder
             $this->validateIfNotStorno();
         }
 
-        $this->total = round($this->calculateTotal());
-        $this->totalWithDiscount = round($this->calculateTotalWithDiscount());
-        $this->totalOfProducts = round($this->calculateTotalOfProducts());
-        $this->serviceFeeTotal = round($this->calculateServiceFeeTotal());
+        // Calculate discrete integer components first
+        $this->totalOfProducts = (int) $this->calculateTotalOfProducts();
+        $this->serviceFeeTotal = (int) $this->calculateServiceFeeTotal();
+
+        // Target Total is the literal sum of the parts to match the receipt image
+        $this->total = $this->totalOfProducts + $this->serviceFeeTotal;
+        $this->totalWithDiscount = $this->total;
+
         $this->end = $end ?: Carbon::now();
     }
 
     /**
      * buildOrderItems
-     *
-     * @return array
      */
     public function buildOrderItems(): ?array
     {
         $drsQuantity = array_reduce(
             $this->orderItems,
             function (int $carry, NTAKOrderItem $orderItem) {
-                $quantity = 0;
-                if ($orderItem->isDrs) {
-                    $quantity = $orderItem->quantity;
-                }
-
-                return $carry + $quantity;
+                return $carry + ($orderItem->isDrs ? $orderItem->quantity : 0);
             },
             0
         );
@@ -86,7 +80,7 @@ class NTAKOrder
         $orderItems = $this->orderItems === null
             ? null
             : array_map(
-                fn (NTAKOrderItem $orderItem) => $orderItem->buildRequest($this->isAtTheSpot),
+                fn(NTAKOrderItem $orderItem) => $orderItem->buildRequest($this->isAtTheSpot),
                 $this->orderItems
             );
 
@@ -99,6 +93,7 @@ class NTAKOrder
         }
 
         if ($orderItems !== null && $this->serviceFee > 0) {
+            // Apply grouped service fees then correct for rounding
             $orderItems = $this->correctServiceFeeOrderItems(
                 $this->buildServiceFeeRequests($orderItems)
             );
@@ -109,13 +104,11 @@ class NTAKOrder
 
     /**
      * buildPaymentTypes
-     *
-     * @return array
      */
     public function buildPaymentTypes(): array
     {
         $payments = array_map(
-            fn (NTAKPayment $payment) => $payment->buildRequest(),
+            fn(NTAKPayment $payment) => $payment->buildRequest(),
             $this->payments
         );
 
@@ -125,7 +118,6 @@ class NTAKOrder
                     'fizetesiMod'       => NTAKPaymentType::KEREKITES->name,
                     'fizetettOsszegHUF' => $payment->round(),
                 ];
-
                 break;
             }
         }
@@ -133,32 +125,16 @@ class NTAKOrder
         return $payments;
     }
 
-    /**
-     * total getter
-     *
-     * @return int|null
-     */
     public function total(): ?int
     {
         return $this->total;
     }
 
-    /**
-     * totalWithDiscount getter
-     *
-     * @return int|null
-     */
     public function totalWithDiscount(): ?int
     {
         return $this->totalWithDiscount;
     }
 
-    /**
-     * validateIfNormal
-     *
-     * @return void
-     * @throws InvalidArgumentException
-     */
     protected function validateIfNormal(): void
     {
         if ($this->discount > 100) {
@@ -166,12 +142,6 @@ class NTAKOrder
         }
     }
 
-    /**
-     * validateIfNotNormal
-     *
-     * @return void
-     * @throws InvalidArgumentException
-     */
     protected function validateIfNotNormal(): void
     {
         if ($this->ntakOrderId === null) {
@@ -179,12 +149,6 @@ class NTAKOrder
         }
     }
 
-    /**
-     * validateIfNotStorno
-     *
-     * @return void
-     * @throws InvalidArgumentException
-     */
     protected function validateIfNotStorno(): void
     {
         if ($this->orderItems === null || count($this->orderItems) === 0) {
@@ -197,184 +161,73 @@ class NTAKOrder
             }
         }
 
-        if ($this->start === null) {
-            throw new InvalidArgumentException('start cannot be null in this case');
-        }
-
-        if ($this->end === null) {
-            throw new InvalidArgumentException('end cannot be null in this case');
-        }
-
-        if (count($this->payments) === 0 || $this->payments === null) {
-            throw new InvalidArgumentException('paymentType cannot be null in this case');
+        if ($this->start === null || $this->end === null || empty($this->payments)) {
+            throw new InvalidArgumentException('Required order data is missing');
         }
     }
 
     /**
-     * calculateTotal
-     *
-     * @return float
+     * Sum up the actual rounded total of every physical item (including DRS)
      */
-    protected function calculateTotal(): float
-    {
-        if ($this->orderType !== NTAKOrderType::SZTORNO) {
-            $sumOfSimpleOrderItems = $this->totalOfOrderItems($this->getSimpleOrderItems($this->orderItems));
-            $sumOfSpecialOrderItems = $this->totalOfOrderItems($this->getSpecialOrderItems($this->orderItems));
-            return $sumOfSimpleOrderItems + $sumOfSimpleOrderItems * $this->serviceFee / 100 + $sumOfSpecialOrderItems;
-        }
-
-        return 0;
-    }
-
-    /**
-     * calculateTotalWithDiscount
-     *
-     * @return float
-     */
-    protected function calculateTotalWithDiscount(): float
-    {
-        if ($this->discount === 0) {
-            return $this->total;
-        }
-
-        if ($this->orderType !== NTAKOrderType::SZTORNO) {
-            $sumOfSimpleOrderItems = $this->totalOfOrderItemsWithDiscount($this->getSimpleOrderItems($this->orderItems));
-            $sumOfSpecialOrderItems = $this->totalOfOrderItems($this->getSpecialOrderItems($this->orderItems));
-
-            return $sumOfSimpleOrderItems + $sumOfSimpleOrderItems * $this->serviceFee / 100 + $sumOfSpecialOrderItems;
-        }
-
-        return 0;
-    }
-
     protected function calculateTotalOfProducts(): float
     {
-        if ($this->orderType !== NTAKOrderType::SZTORNO) {
-            return array_reduce(
-                $this->orderItems,
-                function (float $carry, NTAKOrderItem $orderItem) {
-                    return $carry + $orderItem->roundedSum();
-                },
-                0
-            );
+        if ($this->orderType === NTAKOrderType::SZTORNO) {
+            return 0;
         }
 
-        return 0;
-    }
-
-    /**
-     * Get the total quantity of DRS items for a specific VAT category.
-     *
-     * @param  NTAKVat $vat
-     * @return int
-     */
-    public function drsQuantityByVat(NTAKVat $vat): int
-    {
         return array_reduce(
             $this->orderItems,
-            function (int $carry, NTAKOrderItem $orderItem) use ($vat) {
-                if ($orderItem->isDrs && $orderItem->vat === $vat) {
-                    return $carry + $orderItem->quantity;
-                }
-
-                return $carry;
-            },
+            fn(float $carry, NTAKOrderItem $orderItem) => $carry + $orderItem->roundedSum(),
             0
         );
     }
 
     /**
-     * calculateServiceFeeTotal
-     *
-     * @return float
+     * Calculate service fee using floor() to match receipt (957 * 0.15 = 143.55 -> 143)
      */
     protected function calculateServiceFeeTotal(): float
     {
-        if ($this->orderItems === null || $this->orderItems === []) {
+        if ($this->orderItems === null || $this->serviceFee === 0) {
             return 0;
         }
 
-        return $this->totalOfOrderItemsWithDiscount($this->getSimpleOrderItems($this->orderItems)) * ($this->serviceFee / 100);
+        $base = $this->totalOfOrderItemsWithDiscount($this->getSimpleOrderItems($this->orderItems));
+
+        return floor($base * ($this->serviceFee / 100));
     }
 
-    /**
-     * buildDiscountRequests
-     *
-     * @param  array $orderItems
-     * @return array
-     */
-    protected function buildDiscountRequests(array $orderItems): array
+    public function drsQuantityByVat(NTAKVat $vat): int
     {
-        $vats = $this->uniqueVats();
-
-        foreach ($vats as $vat) {
-            $orderItems = $this->addDiscountRequestByVat($orderItems, $vat);
-        }
-
-        return $orderItems;
+        return array_reduce(
+            $this->orderItems,
+            fn(int $carry, NTAKOrderItem $item) => $carry + (($item->isDrs && $item->vat === $vat) ? $item->quantity : 0),
+            0
+        );
     }
 
-    /**
-     * buildServiceFeeRequests
-     *
-     * @param  array $orderItems
-     * @return array
-     */
     protected function buildServiceFeeRequests(array $orderItems): array
     {
         $vats = $this->uniqueVats();
+        $this->serviceFeeItems = []; // Reset tracking
 
         foreach ($vats as $vat) {
-            $orderItems = $this->addServiceFeeRequestByVat(
-                orderItems: $orderItems,
-                vat: $vat,
-                drsQuantity: $this->drsQuantityByVat($vat)
-            );
+            $orderItems = $this->addServiceFeeRequestByVat($orderItems, $vat);
         }
 
         return $orderItems;
     }
 
-    /**
-     * addDiscountRequestByVat
-     *
-     * @param  array   $orderItems
-     * @param  NTAKVat $vat
-     * @return array
-     */
-    protected function addDiscountRequestByVat(array $orderItems, NTAKVat $vat): array
+    protected function addServiceFeeRequestByVat(array $orderItems, NTAKVat $vat): array
     {
         $orderItemsWithVat = $this->orderItemsWithVat($vat);
-
-        $totalOfOrderItems = $this->totalOfOrderItems($orderItemsWithVat);
         $totalOfOrderItemsWithDiscount = $this->totalOfOrderItemsWithDiscount($orderItemsWithVat);
 
-        $orderItems[] = NTAKOrderItem::buildDiscountRequest(
-            $vat,
-            $totalOfOrderItemsWithDiscount - $totalOfOrderItems,
-            $this->end
-        );
-
-        return $orderItems;
-    }
-
-    /**
-     * addServiceFeeRequestByVat
-     *
-     * @param  array   $orderItems
-     * @param  NTAKVat $vat
-     * @param  int     $drsQuantity
-     * @return array
-     */
-    protected function addServiceFeeRequestByVat(array $orderItems, NTAKVat $vat, int $drsQuantity): array
-    {
-        $orderItemsWithVat = $this->orderItemsWithVat($vat);
-        // This now only contains non-DRS items
-        $totalOfOrderItemsWithDiscount = $this->totalOfOrderItemsWithDiscount($orderItemsWithVat);
+        // Individual VAT-line service fee
+        $feeAmount = (int) round($totalOfOrderItemsWithDiscount * $this->serviceFee / 100);
 
         $serviceFeeItem = NTAKOrderItem::buildServiceFeeRequest(
             $vat,
-            round($totalOfOrderItemsWithDiscount * $this->serviceFee / 100),
+            $feeAmount,
             $this->end
         );
 
@@ -384,113 +237,30 @@ class NTAKOrder
         return $orderItems;
     }
 
-    /**
-     * orderItemsWithVat
-     *
-     * @param  NTAKVat $vat
-     * @return array
-     */
-    protected function orderItemsWithVat(NTAKVat $vat): array
-    {
-        return array_filter(
-            $this->orderItems,
-            fn (NTAKOrderItem $orderItem) => $orderItem->vat === $vat && !($orderItem->category === NTAKCategory::EGYEB && $orderItem->subcategory === NTAKSubcategory::EGYEB)
-        );
-    }
-
-    /**
-     * totalOfOrderItems
-     *
-     * @param  array $orderItems
-     * @return float
-     */
-    protected function totalOfOrderItems(array $orderItems): float
-    {
-        return array_reduce(
-            $orderItems,
-            function (float $carry, NTAKOrderItem $orderItem) {
-                return $carry + $orderItem->price * $orderItem->quantity;
-            },
-            0
-        );
-    }
-
-    /**
-     * totalOfOrderItemsWithDiscount
-     *
-     * @param  array|NTAKOrderItem[] $orderItems
-     * @return float
-     */
-    protected function totalOfOrderItemsWithDiscount(array $orderItems): float
-    {
-        return array_reduce(
-            $orderItems,
-            function (float $carry, NTAKOrderItem $orderItem) {
-                $price = ($orderItem->price * $orderItem->quantity) *
-                         (1 - $this->discount / 100);
-
-                return $carry + $price;
-            },
-            0
-        );
-    }
-
-    /**
-     * uniqueVats
-     *
-     * @return array
-     */
-    protected function uniqueVats(): array
-    {
-        return array_unique(
-            array_map(
-                fn (NTAKOrderItem $orderItem) => $orderItem->vat,
-                array_filter(
-                    $this->orderItems,
-                    fn (NTAKOrderItem $orderItem) => !($orderItem->category === NTAKCategory::EGYEB && $orderItem->subcategory === NTAKSubcategory::EGYEB)
-                )
-            ),
-            SORT_REGULAR
-        );
-    }
-
-    /**
-     * correctServiceFeeOrderItems
-     *
-     * @param  array $orderItems
-     * @return array
-     */
     protected function correctServiceFeeOrderItems(array $orderItems): array
     {
         if (empty($this->serviceFeeItems)) {
             return $orderItems;
         }
 
-        // 1. Calculate the target service fee amount
-        // (Total bill minus the cost of all products including DRS)
-        $targetServiceFeeTotal = $this->totalWithDiscount - $this->totalOfProducts;
-
-        // 2. See what we have generated so far in the loop
+        // Difference between the discrete target total and sum of current rounded lines
+        $targetServiceFeeTotal = $this->serviceFeeTotal;
         $generatedServiceFeeTotal = array_sum(array_column($this->serviceFeeItems, 'tetelOsszesito'));
-
-        // 3. Find the difference (rounding error)
         $difference = $targetServiceFeeTotal - $generatedServiceFeeTotal;
 
-        // 4. Apply the difference to the last service fee item in the full order list
-        // We identify the last item by comparing the VAT of the last item in serviceFeeItems
+        if ($difference === 0) {
+            return $orderItems;
+        }
+
         $lastServiceFeeRef = end($this->serviceFeeItems);
 
         foreach ($orderItems as &$item) {
-            // Match by subcategory and VAT to find the specific line item
             if (
                 ($item['alkategoria'] ?? null) === NTAKSubcategory::SZERVIZDIJ->name &&
                 $item['afaKategoria'] === $lastServiceFeeRef['afaKategoria']
             ) {
-                // We apply the difference here
                 $item['bruttoEgysegar'] += $difference;
                 $item['tetelOsszesito'] += $difference;
-
-                // Break so we only apply it to the last one
                 break;
             }
         }
@@ -498,47 +268,71 @@ class NTAKOrder
         return $orderItems;
     }
 
-    /**
-     * serviceFeeItems
-     *
-     * @param  array $orderItems
-     * @return array
-     */
-    protected function serviceFeeItems(array $orderItems): array
+    protected function buildDiscountRequests(array $orderItems): array
+    {
+        foreach ($this->uniqueVats() as $vat) {
+            $orderItems = $this->addDiscountRequestByVat($orderItems, $vat);
+        }
+        return $orderItems;
+    }
+
+    protected function addDiscountRequestByVat(array $orderItems, NTAKVat $vat): array
+    {
+        $items = $this->orderItemsWithVat($vat);
+        $diff = $this->totalOfOrderItemsWithDiscount($items) - $this->totalOfOrderItems($items);
+
+        $orderItems[] = NTAKOrderItem::buildDiscountRequest($vat, $diff, $this->end);
+        return $orderItems;
+    }
+
+    protected function orderItemsWithVat(NTAKVat $vat): array
     {
         return array_filter(
-            $orderItems,
-            fn (NTAKOrderItem $orderItem) => $orderItem->subcategory === NTAKSubcategory::SZERVIZDIJ
+            $this->orderItems,
+            fn(NTAKOrderItem $item) => $item->vat === $vat && !($item->category === NTAKCategory::EGYEB && $item->subcategory === NTAKSubcategory::EGYEB)
         );
     }
 
-    /**
-     * getSimpleOrderItems
-     *
-     * @param  array $orderItems
-     * @return array of NTAKOrderItem needed discount and fee
-     */
+    protected function totalOfOrderItems(array $orderItems): float
+    {
+        return array_reduce($orderItems, fn(float $carry, NTAKOrderItem $item) => $carry + $item->price * $item->quantity, 0);
+    }
+
+    protected function totalOfOrderItemsWithDiscount(array $orderItems): float
+    {
+        return array_reduce(
+            $orderItems,
+            fn(float $carry, NTAKOrderItem $item) => $carry + ($item->price * $item->quantity) * (1 - $this->discount / 100),
+            0
+        );
+    }
+
+    protected function uniqueVats(): array
+    {
+        return array_unique(
+            array_map(
+                fn(NTAKOrderItem $item) => $item->vat,
+                array_filter($this->orderItems, fn(NTAKOrderItem $item) => !($item->category === NTAKCategory::EGYEB && $item->subcategory === NTAKSubcategory::EGYEB))
+            ),
+            SORT_REGULAR
+        );
+    }
+
     protected function getSimpleOrderItems(array $orderItems): array
     {
         return array_filter(
             $orderItems,
-            fn(NTAKOrderItem $orderItem) =>
-            !($orderItem->category === NTAKCategory::EGYEB && $orderItem->subcategory === NTAKSubcategory::EGYEB)
-                && !$orderItem->isDrs // Add this
+            fn(NTAKOrderItem $item) =>
+            !($item->category === NTAKCategory::EGYEB && $item->subcategory === NTAKSubcategory::EGYEB)
+                && !$item->isDrs
         );
     }
 
-    /**
-     * getSpecialOrderItems
-     *
-     * @param  array $orderItems
-     * @return array of NTAKOrderItem without discount and fee
-     */
     protected function getSpecialOrderItems(array $orderItems): array
     {
         return array_filter(
             $orderItems,
-            fn (NTAKOrderItem $orderItem) => ($orderItem->category === NTAKCategory::EGYEB && $orderItem->subcategory === NTAKSubcategory::EGYEB)
+            fn(NTAKOrderItem $item) => ($item->category === NTAKCategory::EGYEB && $item->subcategory === NTAKSubcategory::EGYEB)
         );
     }
 }
