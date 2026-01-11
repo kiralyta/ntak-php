@@ -480,8 +480,8 @@ class NTAKOrder
         /** @var NTAKOrderItem $orderItem **/
         foreach ($this->serviceFeeItems as $orderItem) {
             if ($orderItem === $lastServiceFeeItem) {
-                $correctedServiceFeeAmount = $this->serviceFeeTotal - $currentServiceFeeTotal;
-                // $correctedServiceFeeAmount = $this->totalWithDiscount - $currentServiceFeeTotal - $this->totalOfProducts;
+                // $correctedServiceFeeAmount = $this->serviceFeeTotal - $currentServiceFeeTotal;
+                $correctedServiceFeeAmount = $this->totalWithDiscount - $currentServiceFeeTotal - $this->totalOfProducts;
             }
 
             $currentServiceFeeTotal = $currentServiceFeeTotal + $orderItem['tetelOsszesito'];
