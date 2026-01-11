@@ -18,6 +18,7 @@ class NTAKOrder
     protected int   $totalOfProducts;
     protected array $serviceFeeItems = [];
     protected int   $serviceFeeTotal = 0;
+    protected int   $drsQuantity = 0;
 
     /**
      * __construct
@@ -56,6 +57,7 @@ class NTAKOrder
             $this->validateIfNotStorno();
         }
 
+        $this->drsQuantity = $this->drsQuantity();
         $this->total = round($this->calculateTotal());
         $this->totalWithDiscount = round($this->calculateTotalWithDiscount());
         $this->totalOfProducts = round($this->calculateTotalOfProducts());
@@ -70,19 +72,6 @@ class NTAKOrder
      */
     public function buildOrderItems(): ?array
     {
-        $drsQuantity = array_reduce(
-            $this->orderItems,
-            function (int $carry, NTAKOrderItem $orderItem) {
-                $quantity = 0;
-                if ($orderItem->isDrs) {
-                    $quantity = $orderItem->quantity;
-                }
-
-                return $carry + $quantity;
-            },
-            0
-        );
-
         $orderItems = $this->orderItems === null
             ? null
             : array_map(
@@ -90,8 +79,8 @@ class NTAKOrder
                 $this->orderItems
             );
 
-        if ($orderItems !== null && $drsQuantity > 0) {
-            $orderItems[] = NTAKOrderItem::buildDrsRequest($drsQuantity, $this->end);
+        if ($orderItems !== null && $this->drsQuantity > 0) {
+            $orderItems[] = NTAKOrderItem::buildDrsRequest($this->drsQuantity, $this->end);
         }
 
         if ($orderItems !== null && $this->discount > 0) {
@@ -217,10 +206,13 @@ class NTAKOrder
      */
     protected function calculateTotal(): float
     {
+        $totalOfDrs = $this->drsQuantity * NTAK::drsAmount;
+
         if ($this->orderType !== NTAKOrderType::SZTORNO) {
             $sumOfSimpleOrderItems = $this->totalOfOrderItems($this->getSimpleOrderItems($this->orderItems));
             $sumOfSpecialOrderItems = $this->totalOfOrderItems($this->getSpecialOrderItems($this->orderItems));
-            return $sumOfSimpleOrderItems + $sumOfSimpleOrderItems * $this->serviceFee / 100 + $sumOfSpecialOrderItems;
+            return (($sumOfSimpleOrderItems) - $totalOfDrs) * $this->serviceFeeMultiplier()
+                + $sumOfSpecialOrderItems + $totalOfDrs;
         }
 
         return 0;
@@ -263,24 +255,39 @@ class NTAKOrder
     }
 
     /**
-     * Get the total quantity of DRS items for a specific VAT category.
-     *
-     * @param  NTAKVat $vat
-     * @return int
+     * Get the total quantity of DRS items, optionally filtered by VAT category.
      */
-    public function drsQuantityByVat(NTAKVat $vat): int
+    protected function calculateDrsQuantity(?NTAKVat $vat = null): int
     {
         return array_reduce(
             $this->orderItems,
             function (int $carry, NTAKOrderItem $orderItem) use ($vat) {
-                if ($orderItem->isDrs && $orderItem->vat === $vat) {
-                    return $carry + $orderItem->quantity;
+                $isTargetVat = $vat === null || $orderItem->vat === $vat;
+
+                if ($orderItem->isDrs && $isTargetVat) {
+                    return $carry + (int)$orderItem->quantity;
                 }
 
                 return $carry;
             },
             0
         );
+    }
+
+    /**
+     * Public wrapper for specific VAT category.
+     */
+    public function drsQuantityByVat(NTAKVat $vat): int
+    {
+        return $this->calculateDrsQuantity($vat);
+    }
+
+    /**
+     * Protected wrapper for total DRS quantity.
+     */
+    protected function drsQuantity(): int
+    {
+        return $this->calculateDrsQuantity();
     }
 
     /**
@@ -532,5 +539,12 @@ class NTAKOrder
             $orderItems,
             fn (NTAKOrderItem $orderItem) => ($orderItem->category === NTAKCategory::EGYEB && $orderItem->subcategory === NTAKSubcategory::EGYEB)
         );
+    }
+
+    protected function serviceFeeMultiplier(): float
+    {
+        return $this->serviceFee === 0
+            ? 1
+            : 1 + ($this->serviceFee / 100);
     }
 }
