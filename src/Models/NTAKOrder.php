@@ -88,10 +88,10 @@ class NTAKOrder
         }
 
         if ($orderItems !== null && $this->serviceFee > 0) {
-            // $orderItems = $this->correctServiceFeeOrderItems(
-            //     $this->buildServiceFeeRequests($orderItems)
-            // );
-            $orderItems = $this->buildServiceFeeRequests($orderItems);
+            $orderItems = $this->correctServiceFeeOrderItems(
+                $this->buildServiceFeeRequests($orderItems)
+            );
+            // $orderItems = $this->buildServiceFeeRequests($orderItems);
         }
 
         return $orderItems;
@@ -480,8 +480,8 @@ class NTAKOrder
         /** @var NTAKOrderItem $orderItem **/
         foreach ($this->serviceFeeItems as $orderItem) {
             if ($orderItem === $lastServiceFeeItem) {
-                // $correctedServiceFeeAmount = $this->serviceFeeTotal - $currentServiceFeeTotal;
-                $correctedServiceFeeAmount = $this->totalWithDiscount - $currentServiceFeeTotal - $this->totalOfProducts;
+                $correctedServiceFeeAmount = $this->serviceFeeTotal - $currentServiceFeeTotal;
+                // $correctedServiceFeeAmount = $this->totalWithDiscount - $currentServiceFeeTotal - $this->totalOfProducts;
             }
 
             $currentServiceFeeTotal = $currentServiceFeeTotal + $orderItem['tetelOsszesito'];
