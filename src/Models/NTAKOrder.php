@@ -88,9 +88,10 @@ class NTAKOrder
         }
 
         if ($orderItems !== null && $this->serviceFee > 0) {
-            $orderItems = $this->correctServiceFeeOrderItems(
-                $this->buildServiceFeeRequests($orderItems)
-            );
+            // $orderItems = $this->correctServiceFeeOrderItems(
+            //     $this->buildServiceFeeRequests($orderItems)
+            // );
+            $orderItems = $this->buildServiceFeeRequests($orderItems);
         }
 
         return $orderItems;
@@ -302,7 +303,7 @@ class NTAKOrder
         }
 
         return $this->totalOfOrderItemsWithDiscount($this->getSimpleOrderItems($this->orderItems)) * ($this->serviceFee / 100)
-            - $this->drsQuantity();
+            - $this->drsQuantity;
     }
 
     /**
