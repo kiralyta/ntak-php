@@ -58,12 +58,16 @@ class NTAKOrderItem
             ?  NTAKVat::C_27
             : $this->vat;
 
+        $price = $this->subcategory === NTAKSubcategory::SZERVIZDIJ
+            ? $this->price
+            : $this->price - ($this->drsSum / $this->quantity);
+
         return [
             'megnevezes'        => $this->name,
             'fokategoria'       => $this->category->name,
             'alkategoria'       => $this->subcategory->name,
             'afaKategoria'      => $this->vat->name,
-            'bruttoEgysegar'    => $this->price - ($this->drsSum / $this->quantity),
+            'bruttoEgysegar'    => $price,
             'mennyisegiEgyseg'  => $this->amountType->name,
             'mennyiseg'         => round($this->amount, 2),
             'tetelszam'         => $this->quantity,
