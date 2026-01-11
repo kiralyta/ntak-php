@@ -260,19 +260,23 @@ class NTAKOrder
      */
     protected function calculateDrsQuantity(?NTAKVat $vat = null): int
     {
-        return array_reduce(
-            $this->orderItems,
-            function (int $carry, NTAKOrderItem $orderItem) use ($vat) {
-                $isTargetVat = $vat === null || $orderItem->vat === $vat;
+        if ($this->orderType !== NTAKOrderType::SZTORNO) {
+            return array_reduce(
+                $this->orderItems,
+                function (int $carry, NTAKOrderItem $orderItem) use ($vat) {
+                    $isTargetVat = $vat === null || $orderItem->vat === $vat;
 
-                if ($orderItem->isDrs && $isTargetVat) {
-                    return $carry + (int)$orderItem->quantity;
-                }
+                    if ($orderItem->isDrs && $isTargetVat) {
+                        return $carry + (int)$orderItem->quantity;
+                    }
 
-                return $carry;
-            },
-            0
-        );
+                    return $carry;
+                },
+                0
+            );
+        }
+
+        return 0;
     }
 
     /**
