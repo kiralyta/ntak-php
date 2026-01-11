@@ -301,7 +301,8 @@ class NTAKOrder
             return 0;
         }
 
-        return $this->totalOfOrderItemsWithDiscount($this->getSimpleOrderItems($this->orderItems)) * ($this->serviceFee / 100);
+        return $this->totalOfOrderItemsWithDiscount($this->getSimpleOrderItems($this->orderItems)) * ($this->serviceFee / 100)
+            - $this->drsQuantity();
     }
 
     /**
