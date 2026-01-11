@@ -382,7 +382,7 @@ class NTAKOrder
 
         $serviceFeeItem = NTAKOrderItem::buildServiceFeeRequest(
             $vat,
-            round(($totalOfOrderItemsWithDiscount - $drsQuantity * NTAK::drsAmount) * $this->serviceFee / 100) - $drsQuantity * NTAK::drsAmount,
+            round(($totalOfOrderItemsWithDiscount - $this->drsQuantity * NTAK::drsAmount) * $this->serviceFee / 100) - $this->drsQuantity * NTAK::drsAmount,
             $this->end
         );
 
