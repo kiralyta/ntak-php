@@ -249,7 +249,7 @@ class NTAKOrder
                     return $carry + $orderItem->roundedSum();
                 },
                 0
-            );
+            ) + $this->drsQuantity * NTAK::drsAmount;
         }
 
         return 0;
