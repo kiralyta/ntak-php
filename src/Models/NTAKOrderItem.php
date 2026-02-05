@@ -7,6 +7,7 @@ use Kiralyta\Ntak\Enums\NTAKAmount;
 use Kiralyta\Ntak\Enums\NTAKCategory;
 use Kiralyta\Ntak\Enums\NTAKSubcategory;
 use Kiralyta\Ntak\Enums\NTAKVat;
+use Kiralyta\Ntak\NTAK;
 
 class NTAKOrderItem
 {
@@ -41,7 +42,7 @@ class NTAKOrderItem
         public readonly bool            $isDrs = false
     ) {
         $this->drsSum = $isDrs
-            ? $this->quantity * 50
+            ? $this->quantity * NTAK::drsAmount
             : 0;
     }
 
@@ -57,12 +58,16 @@ class NTAKOrderItem
             ?  NTAKVat::C_27
             : $this->vat;
 
+        $price = $this->subcategory === NTAKSubcategory::SZERVIZDIJ
+            ? $this->price
+            : $this->price - ($this->drsSum / $this->quantity);
+
         return [
             'megnevezes'        => $this->name,
             'fokategoria'       => $this->category->name,
             'alkategoria'       => $this->subcategory->name,
             'afaKategoria'      => $this->vat->name,
-            'bruttoEgysegar'    => $this->price - ($this->drsSum / $this->quantity),
+            'bruttoEgysegar'    => $price,
             'mennyisegiEgyseg'  => $this->amountType->name,
             'mennyiseg'         => round($this->amount, 2),
             'tetelszam'         => $this->quantity,
@@ -136,7 +141,7 @@ class NTAKOrderItem
                 category: NTAKCategory::EGYEB,
                 subcategory: NTAKSubcategory::KORNYEZETBARAT_CSOMAGOLAS,
                 vat: NTAKVat::E_0,
-                price: 50,
+                price: NTAK::drsAmount,
                 amountType: NTAKAmount::DARAB,
                 amount: 1,
                 quantity: $quantity,

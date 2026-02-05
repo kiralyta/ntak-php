@@ -13,6 +13,8 @@ use Kiralyta\Ntak\Responses\NTAKVerifyResponse;
 
 class NTAK
 {
+    public const drsAmount = 50;
+
     /**
      * __construct
      *

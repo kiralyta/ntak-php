@@ -9,6 +9,7 @@ use Kiralyta\Ntak\Enums\NTAKOrderType;
 use Kiralyta\Ntak\Enums\NTAKPaymentType;
 use Kiralyta\Ntak\Enums\NTAKSubcategory;
 use Kiralyta\Ntak\Enums\NTAKVat;
+use Kiralyta\Ntak\NTAK;
 
 class NTAKOrder
 {
@@ -17,6 +18,7 @@ class NTAKOrder
     protected int   $totalOfProducts;
     protected array $serviceFeeItems = [];
     protected int   $serviceFeeTotal = 0;
+    protected int   $drsQuantity = 0;
 
     /**
      * __construct
@@ -55,6 +57,7 @@ class NTAKOrder
             $this->validateIfNotStorno();
         }
 
+        $this->drsQuantity = $this->drsQuantity();
         $this->total = round($this->calculateTotal());
         $this->totalWithDiscount = round($this->calculateTotalWithDiscount());
         $this->totalOfProducts = round($this->calculateTotalOfProducts());
@@ -69,19 +72,6 @@ class NTAKOrder
      */
     public function buildOrderItems(): ?array
     {
-        $drsQuantity = array_reduce(
-            $this->orderItems,
-            function (int $carry, NTAKOrderItem $orderItem) {
-                $quantity = 0;
-                if ($orderItem->isDrs) {
-                    $quantity = $orderItem->quantity;
-                }
-
-                return $carry + $quantity;
-            },
-            0
-        );
-
         $orderItems = $this->orderItems === null
             ? null
             : array_map(
@@ -89,8 +79,8 @@ class NTAKOrder
                 $this->orderItems
             );
 
-        if ($orderItems !== null && $drsQuantity > 0) {
-            $orderItems[] = NTAKOrderItem::buildDrsRequest($drsQuantity, $this->end);
+        if ($orderItems !== null && $this->drsQuantity > 0) {
+            $orderItems[] = NTAKOrderItem::buildDrsRequest($this->drsQuantity, $this->end);
         }
 
         if ($orderItems !== null && $this->discount > 0) {
@@ -101,6 +91,7 @@ class NTAKOrder
             $orderItems = $this->correctServiceFeeOrderItems(
                 $this->buildServiceFeeRequests($orderItems)
             );
+            // $orderItems = $this->buildServiceFeeRequests($orderItems);
         }
 
         return $orderItems;
@@ -216,10 +207,13 @@ class NTAKOrder
      */
     protected function calculateTotal(): float
     {
+        $totalOfDrs = $this->drsQuantity * NTAK::drsAmount;
+
         if ($this->orderType !== NTAKOrderType::SZTORNO) {
             $sumOfSimpleOrderItems = $this->totalOfOrderItems($this->getSimpleOrderItems($this->orderItems));
             $sumOfSpecialOrderItems = $this->totalOfOrderItems($this->getSpecialOrderItems($this->orderItems));
-            return $sumOfSimpleOrderItems + $sumOfSimpleOrderItems * $this->serviceFee / 100 + $sumOfSpecialOrderItems;
+            return (($sumOfSimpleOrderItems) - $totalOfDrs) * $this->serviceFeeMultiplier()
+                + $sumOfSpecialOrderItems + $totalOfDrs;
         }
 
         return 0;
@@ -255,10 +249,50 @@ class NTAKOrder
                     return $carry + $orderItem->roundedSum();
                 },
                 0
+            ) + $this->drsQuantity * NTAK::drsAmount;
+        }
+
+        return 0;
+    }
+
+    /**
+     * Get the total quantity of DRS items, optionally filtered by VAT category.
+     */
+    protected function calculateDrsQuantity(?NTAKVat $vat = null): int
+    {
+        if ($this->orderType !== NTAKOrderType::SZTORNO) {
+            return array_reduce(
+                $this->orderItems,
+                function (int $carry, NTAKOrderItem $orderItem) use ($vat) {
+                    $isTargetVat = $vat === null || $orderItem->vat === $vat;
+
+                    if ($orderItem->isDrs && $isTargetVat) {
+                        return $carry + (int)$orderItem->quantity;
+                    }
+
+                    return $carry;
+                },
+                0
             );
         }
 
         return 0;
+    }
+
+    /**
+     * Public wrapper for specific VAT category.
+     */
+    public function drsQuantityByVat(NTAKVat $vat): int
+    {
+        return $this->calculateDrsQuantity($vat);
+    }
+
+    /**
+     * Protected wrapper for total DRS quantity.
+     */
+    protected function drsQuantity(): int
+    {
+        return $this->calculateDrsQuantity();
     }
 
     /**
@@ -272,7 +306,8 @@ class NTAKOrder
             return 0;
         }
 
-        return $this->totalOfOrderItemsWithDiscount($this->getSimpleOrderItems($this->orderItems)) * ($this->serviceFee / 100);
+        return $this->totalOfOrderItemsWithDiscount($this->getSimpleOrderItems($this->orderItems)) * ($this->serviceFee / 100)
+            - $this->drsQuantity;
     }
 
     /**
@@ -303,7 +338,11 @@ class NTAKOrder
         $vats = $this->uniqueVats();
 
         foreach ($vats as $vat) {
-            $orderItems = $this->addServiceFeeRequestByVat($orderItems, $vat);
+            $orderItems = $this->addServiceFeeRequestByVat(
+                orderItems: $orderItems,
+                vat: $vat,
+                drsQuantity: $this->drsQuantityByVat($vat)
+            );
         }
 
         return $orderItems;
@@ -337,9 +376,10 @@ class NTAKOrder
      *
      * @param  array   $orderItems
      * @param  NTAKVat $vat
+     * @param  int     $drsQuantity
      * @return array
      */
-    protected function addServiceFeeRequestByVat(array $orderItems, NTAKVat $vat): array
+    protected function addServiceFeeRequestByVat(array $orderItems, NTAKVat $vat, int $drsQuantity): array
     {
         $orderItemsWithVat = $this->orderItemsWithVat($vat);
 
@@ -347,7 +387,7 @@ class NTAKOrder
 
         $serviceFeeItem = NTAKOrderItem::buildServiceFeeRequest(
             $vat,
-            round($totalOfOrderItemsWithDiscount * $this->serviceFee / 100),
+            round(($totalOfOrderItemsWithDiscount - $drsQuantity * NTAK::drsAmount) * $this->serviceFee / 100),
             $this->end
         );
 
@@ -505,5 +545,12 @@ class NTAKOrder
             $orderItems,
             fn (NTAKOrderItem $orderItem) => ($orderItem->category === NTAKCategory::EGYEB && $orderItem->subcategory === NTAKSubcategory::EGYEB)
         );
+    }
+
+    protected function serviceFeeMultiplier(): float
+    {
+        return $this->serviceFee === 0
+            ? 1
+            : 1 + ($this->serviceFee / 100);
     }
 }
