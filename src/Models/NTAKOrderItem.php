@@ -11,8 +11,6 @@ use Kiralyta\Ntak\NTAK;
 
 class NTAKOrderItem
 {
-    protected int $drsSum;
-
     /**
      * __construct
      *
@@ -25,7 +23,7 @@ class NTAKOrderItem
      * @param float           $amount
      * @param int             $quantity
      * @param Carbon          $when
-     * @param bool            $isDrs
+     * @param float           $drsAmount
      *
      * @return void
      */
@@ -39,12 +37,8 @@ class NTAKOrderItem
         public readonly float           $amount,
         public readonly int             $quantity,
         public readonly Carbon          $when,
-        public readonly bool            $isDrs = false
-    ) {
-        $this->drsSum = $isDrs
-            ? $this->quantity * NTAK::drsAmount
-            : 0;
-    }
+        public readonly float           $drsAmount = 0
+    ) { }
 
     /**
      * buildRequest
@@ -60,7 +54,7 @@ class NTAKOrderItem
 
         $price = $this->subcategory === NTAKSubcategory::SZERVIZDIJ
             ? $this->price
-            : $this->price - ($this->drsSum / $this->quantity);
+            : $this->price - ($this->drsSum() / $this->quantity);
 
         return [
             'megnevezes'        => $this->name,
@@ -130,10 +124,11 @@ class NTAKOrderItem
      * buildDrsRequest
      *
      * @param  int     $quantity
+     * @param  int     $price
      * @param  Carbon  $when
      * @return array
      */
-    public static function buildDrsRequest(int $quantity, Carbon $when): array
+    public static function buildDrsRequest(int $quantity, int $price, Carbon $when): array
     {
         return (
             new static(
@@ -141,7 +136,7 @@ class NTAKOrderItem
                 category: NTAKCategory::EGYEB,
                 subcategory: NTAKSubcategory::KORNYEZETBARAT_CSOMAGOLAS,
                 vat: NTAKVat::E_0,
-                price: NTAK::drsAmount,
+                price: $price,
                 amountType: NTAKAmount::DARAB,
                 amount: 1,
                 quantity: $quantity,
@@ -152,6 +147,11 @@ class NTAKOrderItem
 
     public function roundedSum(): int
     {
-        return round($this->quantity * $this->price - $this->drsSum);
+        return round($this->quantity * $this->price - $this->drsSum());
+    }
+
+    public function drsSum(): float
+    {
+        return $this->quantity * $this->drsAmount;
     }
 }
