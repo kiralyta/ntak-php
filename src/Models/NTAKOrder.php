@@ -18,7 +18,7 @@ class NTAKOrder
     protected int   $totalOfProducts;
     protected array $serviceFeeItems = [];
     protected int   $serviceFeeTotal = 0;
-    protected int   $drsQuantity = 0;
+    protected float $drsAmount = 0;
 
     /**
      * __construct
@@ -57,7 +57,7 @@ class NTAKOrder
             $this->validateIfNotStorno();
         }
 
-        $this->drsQuantity = $this->drsQuantity();
+        $this->drsAmount = $this->drsAmount();
         $this->total = round($this->calculateTotal());
         $this->totalWithDiscount = round($this->calculateTotalWithDiscount());
         $this->totalOfProducts = round($this->calculateTotalOfProducts());
@@ -79,8 +79,12 @@ class NTAKOrder
                 $this->orderItems
             );
 
-        if ($orderItems !== null && $this->drsQuantity > 0) {
-            $orderItems[] = NTAKOrderItem::buildDrsRequest($this->drsQuantity, $this->end);
+        if ($orderItems !== null && $this->drsAmount > 0) {
+            foreach ($this->orderItems as $orderItem) { /** @var NTAKOrderItem $orderItem */
+                if ($orderItem->drsAmount > 0) {
+                    $orderItems[] = NTAKOrderItem::buildDrsRequest($orderItem->quantity, $orderItem->drsSum(), $this->end);
+                }
+            }
         }
 
         if ($orderItems !== null && $this->discount > 0) {
@@ -305,8 +309,8 @@ class NTAKOrder
             return 0;
         }
 
-        return $this->totalOfOrderItemsWithDiscount($this->getSimpleOrderItems($this->orderItems)) * ($this->serviceFee / 100)
-            - $this->drsQuantity;
+        return $this->totalOfOrderItemsWithDiscount($this->getSimpleOrderItems($this->orderItems)) * ($this->serviceFee / 100);
+            // - $this->drsQuantity; // TODO heh?
     }
 
     /**
