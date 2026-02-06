@@ -82,7 +82,7 @@ class NTAKOrder
         if ($orderItems !== null && $this->drsAmount > 0) {
             foreach ($this->orderItems as $orderItem) { /** @var NTAKOrderItem $orderItem */
                 if ($orderItem->drsAmount > 0) {
-                    $orderItems[] = NTAKOrderItem::buildDrsRequest($orderItem->quantity, $orderItem->drsSum(), $this->end);
+                    $orderItems[] = NTAKOrderItem::buildDrsRequest($orderItem->quantity, $orderItem->drsAmount, $this->end);
                 }
             }
         }
