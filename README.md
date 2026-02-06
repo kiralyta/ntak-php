@@ -92,7 +92,7 @@ $orderItem = new NTAKOrderItem(
 
     // DRS is handled automatically
     // You don't have to manually create the DRS NTAKOrderItem with vat 0
-    isDrs:           false
+    drsAmount:       50
 );
 ```
 
