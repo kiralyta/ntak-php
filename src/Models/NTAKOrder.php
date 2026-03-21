@@ -362,9 +362,12 @@ class NTAKOrder
         $totalOfOrderItems = $this->totalOfOrderItems($orderItemsWithVat);
         $totalOfOrderItemsWithDiscount = $this->totalOfOrderItemsWithDiscount($orderItemsWithVat);
 
+        $difference = $totalOfOrderItemsWithDiscount - $totalOfOrderItems;
+        $roundedDiscountAmount = (int) round($difference);
+
         $orderItems[] = NTAKOrderItem::buildDiscountRequest(
             $vat,
-            $totalOfOrderItemsWithDiscount - $totalOfOrderItems,
+            $roundedDiscountAmount,
             $this->end
         );
 
