@@ -419,7 +419,7 @@ class NTAKOrder
     {
         $orderItemsWithVat = $this->orderItemsWithVat($vat);
 
-        // This already returns the net amount (Price - DRS) * (1 - Discount)
+        // Calculate the service fee based on the discounted net amount (Product - Discount)
         $totalOfOrderItemsWithDiscount = $this->totalOfOrderItemsWithDiscount($orderItemsWithVat);
 
         $serviceFeeItem = NTAKOrderItem::buildServiceFeeRequest(
@@ -513,33 +513,34 @@ class NTAKOrder
      */
     protected function correctServiceFeeOrderItems(array $orderItems): array
     {
-        $lastServiceFeeItem = end($this->serviceFeeItems);
-
-        $currentServiceFeeTotal = 0;
-        $correctedServiceFeeAmount = 0;
-
-        /** @var NTAKOrderItem $orderItem **/
-        foreach ($this->serviceFeeItems as $orderItem) {
-            if ($orderItem === $lastServiceFeeItem) {
-                // $correctedServiceFeeAmount = $this->serviceFeeTotal - $currentServiceFeeTotal;
-                $correctedServiceFeeAmount = $this->totalWithDiscount - $currentServiceFeeTotal - $this->totalOfProducts;
-            }
-
-            $currentServiceFeeTotal = $currentServiceFeeTotal + $orderItem['tetelOsszesito'];
+        if (empty($this->serviceFeeItems)) {
+            return $orderItems;
         }
 
-        return array_map(
-            function (array $orderItem) use ($lastServiceFeeItem, $correctedServiceFeeAmount) {
-                if ($lastServiceFeeItem === $orderItem) {
-                    $orderItem['tetelOsszesito'] = $orderItem['bruttoEgysegar'] = $correctedServiceFeeAmount;
+        // Calculate the current sum of ALL built lines (Products, DRS, Discounts, and Fees)
+        $currentSum = array_reduce($orderItems, fn($carry, $item) => $carry + $item['tetelOsszesito'], 0);
+        
+        // Find the difference between what we have and what the order total must be
+        $diff = $this->totalWithDiscount - $currentSum;
 
-                    return $orderItem;
-                }
+        if ($diff === 0) {
+            return $orderItems;
+        }
 
-                return $orderItem;
-            },
-            $orderItems
-        );
+        // Apply the correction to the LAST 'Szervízdíj' item in the request array
+        $lastSfIndex = -1;
+        foreach ($orderItems as $index => $item) {
+            if (($item['megnevezes'] ?? '') === 'Szervízdíj') {
+                $lastSfIndex = $index;
+            }
+        }
+
+        if ($lastSfIndex !== -1) {
+            $orderItems[$lastSfIndex]['bruttoEgysegar'] += $diff;
+            $orderItems[$lastSfIndex]['tetelOsszesito'] += $diff;
+        }
+
+        return $orderItems;
     }
 
     /**
