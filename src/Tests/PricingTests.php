@@ -275,7 +275,6 @@ class PricingTests extends TestCase
         $this->assertEquals(380, $order->totalWithDiscount());
 
         $built = $order->buildOrderItems();
-        $this->log($order);
 
         $serviceFeeItems = array_filter($built, fn($item) => ($item['megnevezes'] ?? '') === 'Szervízdíj');
         $this->assertNotEmpty($serviceFeeItems, 'No service fee item found');

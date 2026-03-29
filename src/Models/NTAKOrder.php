@@ -236,7 +236,7 @@ class NTAKOrder
         foreach ($vats as $vat) {
             $discountableAmount = 0;
             
-            // Sum the net product price (roundedSum() handles the price - drs logic)
+            // Sum the net product prices (roundedSum() correctly handles Price - DRS)
             foreach ($this->orderItemsWithVat($vat) as $item) {
                 $discountableAmount += $item->roundedSum();
             }
@@ -246,14 +246,12 @@ class NTAKOrder
                 $discountableAmount += $this->drsQuantity * NTAK::drsAmount;
             }
 
-            // Use PHP_ROUND_HALF_DOWN to match the test (157.5 -> 157)
-            $totalDiscount += round($discountableAmount * ($this->discount / 100), 0, PHP_ROUND_HALF_DOWN);
+            // Calculate rounded discount per VAT category
+            $totalDiscount += (int) round($discountableAmount * ($this->discount / 100), 0, PHP_ROUND_HALF_DOWN);
         }
 
-        // Total products + DRS - Total Rounded Discounts + Service Fee
-        // (Service fee is 0 in your test, but logic should remain)
-        $base = $this->calculateTotalOfProducts() - $totalDiscount;
-        return $base * $this->serviceFeeMultiplier();
+        // Final total: (Total Products - Total Discounts) + Service Fee (calculated only on products)
+        return $this->calculateTotalOfProducts() - $totalDiscount + $this->calculateServiceFeeTotal();
     }
 
     protected function calculateTotalOfProducts(): float
@@ -419,12 +417,18 @@ class NTAKOrder
     {
         $orderItemsWithVat = $this->orderItemsWithVat($vat);
 
-        // Calculate the service fee based on the discounted net amount (Product - Discount)
+        // Calculate service fee only on the discounted net product total for this VAT
         $totalOfOrderItemsWithDiscount = $this->totalOfOrderItemsWithDiscount($orderItemsWithVat);
+        $serviceFeeAmount = (int) round($totalOfOrderItemsWithDiscount * $this->serviceFee / 100);
+
+        // Skip if there is no service fee for this category (e.g. E_0 containing only DRS)
+        if ($serviceFeeAmount <= 0) {
+            return $orderItems;
+        }
 
         $serviceFeeItem = NTAKOrderItem::buildServiceFeeRequest(
             $vat,
-            (int) round($totalOfOrderItemsWithDiscount * $this->serviceFee / 100),
+            $serviceFeeAmount,
             $this->end
         );
 
@@ -517,7 +521,7 @@ class NTAKOrder
             return $orderItems;
         }
 
-        // Calculate the current sum of ALL built lines (Products, DRS, Discounts, and Fees)
+        // Calculate the current sum of ALL built lines (Products, DRS, Discounts, and existing Fees)
         $currentSum = array_reduce($orderItems, fn($carry, $item) => $carry + $item['tetelOsszesito'], 0);
         
         // Find the difference between what we have and what the order total must be
@@ -527,7 +531,7 @@ class NTAKOrder
             return $orderItems;
         }
 
-        // Apply the correction to the LAST 'Szervízdíj' item in the request array
+        // Apply any remaining rounding difference to the LAST 'Szervízdíj' line
         $lastSfIndex = -1;
         foreach ($orderItems as $index => $item) {
             if (($item['megnevezes'] ?? '') === 'Szervízdíj') {
