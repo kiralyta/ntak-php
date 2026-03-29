@@ -57,11 +57,14 @@ class NTAKOrder
             $this->validateIfNotStorno();
         }
 
-        $this->drsQuantity = $this->drsQuantity();
-        $this->total = round($this->calculateTotal());
-        $this->totalWithDiscount = round($this->calculateTotalWithDiscount());
-        $this->totalOfProducts = round($this->calculateTotalOfProducts());
-        $this->serviceFeeTotal = round($this->calculateServiceFeeTotal());
+        $this->drsQuantity     = $this->drsQuantity();
+        $this->totalOfProducts = (int) round($this->calculateTotalOfProducts());
+        
+        $this->serviceFeeTotal = (int) round($this->calculateServiceFeeTotal());
+
+        $this->total             = (int) round($this->calculateTotal());
+        $this->totalWithDiscount = (int) round($this->calculateTotalWithDiscount());
+        
         $this->end = $end ?: Carbon::now();
     }
 
@@ -203,20 +206,12 @@ class NTAKOrder
     /**
      * calculateTotal
      *
-     * @return float
+     * @return int
      */
-    protected function calculateTotal(): float
+    public function calculateTotal(): int
     {
-        $totalOfDrs = $this->drsQuantity * NTAK::drsAmount;
-
-        if ($this->orderType !== NTAKOrderType::SZTORNO) {
-            $sumOfSimpleOrderItems = $this->totalOfOrderItems($this->getSimpleOrderItems($this->orderItems));
-            $sumOfSpecialOrderItems = $this->totalOfOrderItems($this->getSpecialOrderItems($this->orderItems));
-            return (($sumOfSimpleOrderItems) - $totalOfDrs) * $this->serviceFeeMultiplier()
-                + $sumOfSpecialOrderItems + $totalOfDrs;
-        }
-
-        return 0;
+        // total() = Full Products (incl. DRS) + Full Service Fee (calculated on full price)
+        return $this->calculateTotalOfProducts() + $this->calculateServiceFeeTotal(false);
     }
 
     /**
@@ -232,15 +227,14 @@ class NTAKOrder
         foreach ($vats as $vat) {
             $items = $this->orderItemsWithVat($vat);
             
-            // Product net sum (minus DRS)
+            // 1. Calculate the product base for this VAT (Net of DRS)
             $netProductSum = array_reduce($items, fn($c, $i) => $c + $i->roundedSum(), 0);
             
-            // Calculate and subtract discount for this VAT
+            // 2. Calculate and subtract product discount for this VAT
             $discountAmount = (int) round($netProductSum * $this->discount / 100, 0, PHP_ROUND_HALF_DOWN);
-            
             $netDiscountedTotal += ($netProductSum - $discountAmount);
 
-            // Add DRS (discounted) separately for E_0
+            // 3. Add DRS (discounted) separately for E_0
             if ($vat === NTAKVat::E_0 && $this->drsQuantity > 0) {
                 $drsBase = $this->drsQuantity * NTAK::drsAmount;
                 $drsDiscount = (int) round($drsBase * $this->discount / 100, 0, PHP_ROUND_HALF_DOWN);
@@ -248,7 +242,7 @@ class NTAKOrder
             }
         }
 
-        // Total is the sum of discounted bases + the sum of per-VAT rounded service fees
+        // Grand total is the sum of discounted products/DRS + sum of per-VAT rounded service fees
         return $netDiscountedTotal + $this->calculateServiceFeeTotal();
     }
 
@@ -309,10 +303,10 @@ class NTAKOrder
 
     /**
      * calculateServiceFeeTotal
-     *
-     * @return float
+     * * @param  bool $discounted If true, calculates fee on discounted price.
+     * @return int
      */
-    protected function calculateServiceFeeTotal(): int
+    public function calculateServiceFeeTotal(bool $discounted = true): int
     {
         if ($this->serviceFee === 0) {
             return 0;
@@ -320,9 +314,18 @@ class NTAKOrder
 
         $total = 0;
         foreach ($this->uniqueVats() as $vat) {
-            // We calculate the service fee per VAT, matching how buildOrderItems does it
-            $discountedVatBase = $this->totalOfOrderItemsWithDiscount($this->orderItemsWithVat($vat));
-            $total += (int) round($discountedVatBase * $this->serviceFee / 100);
+            $items = $this->orderItemsWithVat($vat);
+            
+            // Service fee is only calculated on the product net (Price - DRS)
+            if ($discounted) {
+                // Base is the product net AFTER the order-level discount
+                $base = $this->totalOfOrderItemsWithDiscount($items);
+            } else {
+                // Base is the FULL product net (undiscounted)
+                $base = array_reduce($items, fn($c, $i) => $c + $i->roundedSum(), 0);
+            }
+
+            $total += (int) round($base * $this->serviceFee / 100);
         }
 
         return $total;
