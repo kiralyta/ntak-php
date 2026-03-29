@@ -230,14 +230,30 @@ class NTAKOrder
             return $this->total;
         }
 
-        if ($this->orderType !== NTAKOrderType::SZTORNO) {
-            $sumOfSimpleOrderItems = $this->totalOfOrderItemsWithDiscount($this->getSimpleOrderItems($this->orderItems));
-            $sumOfSpecialOrderItems = $this->totalOfOrderItems($this->getSpecialOrderItems($this->orderItems));
+        $totalDiscount = 0;
+        $vats = $this->uniqueVats();
 
-            return $sumOfSimpleOrderItems + $sumOfSimpleOrderItems * $this->serviceFee / 100 + $sumOfSpecialOrderItems;
+        foreach ($vats as $vat) {
+            $discountableAmount = 0;
+            
+            // Sum the net product price (roundedSum() handles the price - drs logic)
+            foreach ($this->orderItemsWithVat($vat) as $item) {
+                $discountableAmount += $item->roundedSum();
+            }
+
+            // Add DRS separately under E_0
+            if ($vat === NTAKVat::E_0) {
+                $discountableAmount += $this->drsQuantity * NTAK::drsAmount;
+            }
+
+            // Use PHP_ROUND_HALF_DOWN to match the test (157.5 -> 157)
+            $totalDiscount += round($discountableAmount * ($this->discount / 100), 0, PHP_ROUND_HALF_DOWN);
         }
 
-        return 0;
+        // Total products + DRS - Total Rounded Discounts + Service Fee
+        // (Service fee is 0 in your test, but logic should remain)
+        $base = $this->calculateTotalOfProducts() - $totalDiscount;
+        return $base * $this->serviceFeeMultiplier();
     }
 
     protected function calculateTotalOfProducts(): float
@@ -306,8 +322,10 @@ class NTAKOrder
             return 0;
         }
 
-        return $this->totalOfOrderItemsWithDiscount($this->getSimpleOrderItems($this->orderItems)) * ($this->serviceFee / 100)
-            - $this->drsQuantity;
+        // Use the discounted net total of simple items
+        $netBase = $this->totalOfOrderItemsWithDiscount($this->getSimpleOrderItems($this->orderItems));
+        
+        return round($netBase * ($this->serviceFee / 100));
     }
 
     /**
@@ -357,19 +375,34 @@ class NTAKOrder
      */
     protected function addDiscountRequestByVat(array $orderItems, NTAKVat $vat): array
     {
-        $orderItemsWithVat = $this->orderItemsWithVat($vat);
+        $discountableAmount = 0;
 
-        $totalOfOrderItems = $this->totalOfOrderItems($orderItemsWithVat);
-        $totalOfOrderItemsWithDiscount = $this->totalOfOrderItemsWithDiscount($orderItemsWithVat);
+        // 1. Sum up prices of products in this VAT category
+        foreach ($this->orderItemsWithVat($vat) as $item) {
+            $discountableAmount += $item->roundedSum();
+        }
 
-        $difference = $totalOfOrderItemsWithDiscount - $totalOfOrderItems;
-        $roundedDiscountAmount = (int) round($difference);
+        // 2. If this is the E_0 category, add the DRS amount as discountable
+        if ($vat === NTAKVat::E_0) {
+            $discountableAmount += $this->drsQuantity * NTAK::drsAmount;
+        }
 
-        $orderItems[] = NTAKOrderItem::buildDiscountRequest(
-            $vat,
-            $roundedDiscountAmount,
-            $this->end
-        );
+        if ($discountableAmount <= 0) {
+            return $orderItems;
+        }
+
+        // 3. Calculate discount.
+        // To match your test (157.5 -> 157), we use ROUND_HALF_DOWN
+        $discountValue = $discountableAmount * ($this->discount / 100);
+        $roundedDiscount = (int) round($discountValue, 0, PHP_ROUND_HALF_DOWN);
+
+        if ($roundedDiscount > 0) {
+            $orderItems[] = NTAKOrderItem::buildDiscountRequest(
+                $vat,
+                -$roundedDiscount,
+                $this->end
+            );
+        }
 
         return $orderItems;
     }
@@ -386,16 +419,16 @@ class NTAKOrder
     {
         $orderItemsWithVat = $this->orderItemsWithVat($vat);
 
+        // This already returns the net amount (Price - DRS) * (1 - Discount)
         $totalOfOrderItemsWithDiscount = $this->totalOfOrderItemsWithDiscount($orderItemsWithVat);
 
         $serviceFeeItem = NTAKOrderItem::buildServiceFeeRequest(
             $vat,
-            round(($totalOfOrderItemsWithDiscount - $drsQuantity * NTAK::drsAmount) * $this->serviceFee / 100),
+            (int) round($totalOfOrderItemsWithDiscount * $this->serviceFee / 100),
             $this->end
         );
 
-        $orderItems[] = $serviceFeeItem;
-
+        $orderItems[] = $serviceFeeItem;        
         $this->serviceFeeItems[] = $serviceFeeItem;
 
         return $orderItems;
@@ -443,10 +476,11 @@ class NTAKOrder
         return array_reduce(
             $orderItems,
             function (float $carry, NTAKOrderItem $orderItem) {
-                $price = ($orderItem->price * $orderItem->quantity) *
-                         (1 - $this->discount / 100);
+                // Apply discount to the net sum (excluding DRS)
+                $netSum = $orderItem->roundedSum();
+                $discountedNet = $netSum * (1 - $this->discount / 100);
 
-                return $carry + $price;
+                return $carry + $discountedNet;
             },
             0
         );
@@ -459,16 +493,16 @@ class NTAKOrder
      */
     protected function uniqueVats(): array
     {
-        return array_unique(
-            array_map(
-                fn (NTAKOrderItem $orderItem) => $orderItem->vat,
-                array_filter(
-                    $this->orderItems,
-                    fn (NTAKOrderItem $orderItem) => !($orderItem->category === NTAKCategory::EGYEB && $orderItem->subcategory === NTAKSubcategory::EGYEB)
-                )
-            ),
-            SORT_REGULAR
+        $vats = array_map(
+            fn (NTAKOrderItem $orderItem) => $orderItem->vat,
+            $this->getSimpleOrderItems($this->orderItems)
         );
+
+        if ($this->drsQuantity > 0) {
+            $vats[] = NTAKVat::E_0; // for DRS discount line
+        }
+
+        return array_unique($vats, SORT_REGULAR);
     }
 
     /**
