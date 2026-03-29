@@ -295,4 +295,107 @@ class PricingTests extends TestCase
         $this->assertEquals('E_0', $discount2['afaKategoria']);
     }
 
+    // 13
+    public function test_seven_hell_with_service_fee(): void
+    {
+        $items = [
+            $this->productHell(7)
+        ];
+
+        $discount = 0;
+        $serviceFee = 13;
+        $order = $this->createOrder($items, $discount, $serviceFee);
+        $this->assertEquals(3119, $order->total());
+        $this->assertEquals(3119, $order->totalWithDiscount());
+
+        $built = $order->buildOrderItems();
+
+        $serviceFeeItems = array_filter($built, fn($item) => ($item['megnevezes'] ?? '') === 'Szervízdíj');
+        $this->assertNotEmpty($serviceFeeItems, 'No service fee item found');
+
+        $serviceFeeItem = array_values($serviceFeeItems)[0];
+        $this->assertEquals(319, $serviceFeeItem['tetelOsszesito']); // service fee of discounted base price
+        $this->assertEquals('C_27', $serviceFeeItem['afaKategoria']);
+    }
+
+    // 14
+    public function test_seven_hell_with_service_fee_with_discount(): void
+    {
+        $items = [
+            $this->productHell(7)
+        ];
+
+        $discount = 15;
+        $serviceFee = 13;
+        $order = $this->createOrder($items, $discount, $serviceFee);
+        $this->assertEquals(3119, $order->total());
+        $this->assertEquals(2652, $order->totalWithDiscount());
+
+        $built = $order->buildOrderItems();
+
+        $serviceFeeItems = array_filter($built, fn($item) => ($item['megnevezes'] ?? '') === 'Szervízdíj');
+        $this->assertNotEmpty($serviceFeeItems, 'No service fee item found');
+
+        $serviceFeeItem = array_values($serviceFeeItems)[0];
+        $this->assertEquals(271, $serviceFeeItem['tetelOsszesito']); // service fee of discounted base price
+        $this->assertEquals('C_27', $serviceFeeItem['afaKategoria']);
+
+        $discountItems = array_filter($built, fn($item) => ($item['megnevezes'] ?? '') === 'Kedvezmény');
+        $this->assertNotEmpty($discountItems, 'No discount item found');
+
+        $discount1 = array_values($discountItems)[0];
+        $this->assertEquals(-367, $discount1['tetelOsszesito']);
+        $this->assertEquals('C_27', $discount1['afaKategoria']);
+
+        $discount2 = array_values($discountItems)[1];
+        $this->assertEquals(-52, $discount2['tetelOsszesito']);
+        $this->assertEquals('E_0', $discount2['afaKategoria']);
+    }
+
+    // 15
+    public function test_one_kaja_one_pia_one_brios_one_hell_with_service_fee_with_discount(): void
+    {
+        $items = [
+            $this->productKaja(1),
+            $this->productPia(1),
+            $this->productBrios(1),
+            $this->productHell(1),
+        ];
+
+        $discount = 20;
+        $serviceFee = 13;
+        $order = $this->createOrder($items, $discount, $serviceFee);
+        $this->assertEquals(3043, $order->total());
+        $this->assertEquals(2436, $order->totalWithDiscount());
+
+        $built = $order->buildOrderItems();
+        $this->log($order);
+
+        $serviceFeeItems = array_filter($built, fn($item) => ($item['megnevezes'] ?? '') === 'Szervízdíj');
+        $this->assertNotEmpty($serviceFeeItems, 'No service fee item found');
+
+        $serviceFeeItem1 = array_values($serviceFeeItems)[0];
+        $this->assertEquals(182, $serviceFeeItem1['tetelOsszesito']);
+        $this->assertEquals('C_27', $serviceFeeItem1['afaKategoria']);
+
+        $serviceFeeItem2 = array_values($serviceFeeItems)[1];
+        $this->assertEquals(94, $serviceFeeItem2['tetelOsszesito']);
+        $this->assertEquals('A_5', $serviceFeeItem2['afaKategoria']);
+
+        $discountItems = array_filter($built, fn($item) => ($item['megnevezes'] ?? '') === 'Kedvezmény');
+        $this->assertNotEmpty($discountItems, 'No discount item found');
+
+        $discount1 = array_values($discountItems)[0];
+        $this->assertEquals(-349, $discount1['tetelOsszesito']);
+        $this->assertEquals('C_27', $discount1['afaKategoria']);
+
+        $discount2 = array_values($discountItems)[1];
+        $this->assertEquals(-180, $discount2['tetelOsszesito']);
+        $this->assertEquals('A_5', $discount2['afaKategoria']);
+
+        $discount3 = array_values($discountItems)[2];
+        $this->assertEquals(-10, $discount3['tetelOsszesito']);
+        $this->assertEquals('E_0', $discount3['afaKategoria']);
+    }
+
 }

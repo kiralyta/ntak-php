@@ -226,32 +226,30 @@ class NTAKOrder
      */
     protected function calculateTotalWithDiscount(): float
     {
-        if ($this->discount === 0) {
-            return $this->total;
-        }
-
-        $totalDiscount = 0;
         $vats = $this->uniqueVats();
+        $netDiscountedTotal = 0;
 
         foreach ($vats as $vat) {
-            $discountableAmount = 0;
+            $items = $this->orderItemsWithVat($vat);
             
-            // Sum the net product prices (roundedSum() correctly handles Price - DRS)
-            foreach ($this->orderItemsWithVat($vat) as $item) {
-                $discountableAmount += $item->roundedSum();
-            }
+            // Product net sum (minus DRS)
+            $netProductSum = array_reduce($items, fn($c, $i) => $c + $i->roundedSum(), 0);
+            
+            // Calculate and subtract discount for this VAT
+            $discountAmount = (int) round($netProductSum * $this->discount / 100, 0, PHP_ROUND_HALF_DOWN);
+            
+            $netDiscountedTotal += ($netProductSum - $discountAmount);
 
-            // Add DRS separately under E_0
-            if ($vat === NTAKVat::E_0) {
-                $discountableAmount += $this->drsQuantity * NTAK::drsAmount;
+            // Add DRS (discounted) separately for E_0
+            if ($vat === NTAKVat::E_0 && $this->drsQuantity > 0) {
+                $drsBase = $this->drsQuantity * NTAK::drsAmount;
+                $drsDiscount = (int) round($drsBase * $this->discount / 100, 0, PHP_ROUND_HALF_DOWN);
+                $netDiscountedTotal += ($drsBase - $drsDiscount);
             }
-
-            // Calculate rounded discount per VAT category
-            $totalDiscount += (int) round($discountableAmount * ($this->discount / 100), 0, PHP_ROUND_HALF_DOWN);
         }
 
-        // Final total: (Total Products - Total Discounts) + Service Fee (calculated only on products)
-        return $this->calculateTotalOfProducts() - $totalDiscount + $this->calculateServiceFeeTotal();
+        // Total is the sum of discounted bases + the sum of per-VAT rounded service fees
+        return $netDiscountedTotal + $this->calculateServiceFeeTotal();
     }
 
     protected function calculateTotalOfProducts(): float
@@ -314,16 +312,20 @@ class NTAKOrder
      *
      * @return float
      */
-    protected function calculateServiceFeeTotal(): float
+    protected function calculateServiceFeeTotal(): int
     {
-        if ($this->orderItems === null || $this->orderItems === []) {
+        if ($this->serviceFee === 0) {
             return 0;
         }
 
-        // Use the discounted net total of simple items
-        $netBase = $this->totalOfOrderItemsWithDiscount($this->getSimpleOrderItems($this->orderItems));
-        
-        return round($netBase * ($this->serviceFee / 100));
+        $total = 0;
+        foreach ($this->uniqueVats() as $vat) {
+            // We calculate the service fee per VAT, matching how buildOrderItems does it
+            $discountedVatBase = $this->totalOfOrderItemsWithDiscount($this->orderItemsWithVat($vat));
+            $total += (int) round($discountedVatBase * $this->serviceFee / 100);
+        }
+
+        return $total;
     }
 
     /**
