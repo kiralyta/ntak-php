@@ -6,6 +6,9 @@ use Carbon\Carbon;
 use Kiralyta\Ntak\Enums\NTAKOrderType;
 use Kiralyta\Ntak\Enums\NTAKPaymentType;
 use Kiralyta\Ntak\Enums\NTAKSubcategory;
+use Kiralyta\Ntak\Enums\NTAKVat;
+use Kiralyta\Ntak\Enums\NTAKCategory;
+use Kiralyta\Ntak\Enums\NTAKAmount;
 use Kiralyta\Ntak\Models\NTAKOrder;
 use Kiralyta\Ntak\Models\NTAKPayment;
 use Kiralyta\Ntak\NTAK;
@@ -472,5 +475,114 @@ class PricingTests extends TestCase
         });
 
         return array_values($filtered);
+    }
+
+    /**
+     * Reusable product for tests: kaja (1000 Ft, 27% VAT)
+     */
+    private function productKaja(int $quantity): NTAKOrderItem
+    {
+        return new NTAKOrderItem(
+            name: 'kaja',
+            category: NTAKCategory::ETEL,
+            subcategory: NTAKSubcategory::FOETEL,
+            vat: NTAKVat::C_27,
+            price: 1000,
+            amountType: NTAKAmount::DARAB,
+            amount: 1,
+            quantity: $quantity,
+            when: Carbon::now()
+        );
+    }
+
+    /**
+     * Reusable product for tests: pia (397 Ft, 27% VAT, no DRS)
+     */
+    private function productPia(int $quantity): NTAKOrderItem
+    {
+        return new NTAKOrderItem(
+            name: 'pia',
+            category: NTAKCategory::ALKOHOLOSITAL,
+            subcategory: NTAKSubcategory::PARLAT,
+            vat: NTAKVat::C_27,
+            price: 397,
+            amountType: NTAKAmount::LITER,
+            amount: 0.04,
+            quantity: $quantity,
+            when: Carbon::now()
+        );
+    }
+
+    /**
+     * Reusable product for tests: briós (902 Ft, 5% VAT)
+     */
+    private function productBrios(int $quantity): NTAKOrderItem
+    {
+        return new NTAKOrderItem(
+            name: 'briós',
+            category: NTAKCategory::ETEL,
+            subcategory: NTAKSubcategory::PEKSUTEMENY,
+            vat: NTAKVat::A_5,
+            price: 902,
+            amountType: NTAKAmount::DARAB,
+            amount: 1,
+            quantity: $quantity,
+            when: Carbon::now()
+        );
+    }
+
+    /**
+     * Reusable product for tests: hell (400 Ft, 27% VAT, with DRS included)
+     */
+    private function productHell(int $quantity): NTAKOrderItem
+    {
+        return new NTAKOrderItem(
+            name: 'hell',
+            category: NTAKCategory::ALKMENTESITAL_HELYBEN,
+            subcategory: NTAKSubcategory::ROSTOS_UDITO,
+            vat: NTAKVat::C_27,
+            price: 400,
+            amountType: NTAKAmount::DARAB,
+            amount: 1,
+            quantity: $quantity,
+            when: Carbon::now(),
+            isDrs: true
+        );
+    }
+
+    private function createOrder(int $finalAmount, array $items, int $discount, int $serviceFee): NTAKOrder
+    {
+        return new NTAKOrder(
+            orderType: NTAKOrderType::NORMAL,
+            orderId: Uuid::uuid4(),
+            orderItems: $items,
+            start: Carbon::now()->subMinutes(5),
+            end: Carbon::now(),
+            payments: [new NTAKPayment(NTAKPaymentType::BANKKARTYA, $finalAmount)],
+            discount: $discount,
+            serviceFee: $serviceFee
+        );
+    }
+
+    private function log($order): void
+    {
+        $orders = [$order];
+
+        $fakeClient = new FakeNTAKClient(
+            taxNumber:         'tax_number',
+            regNumber:         'NTAK_REGNUMBER',
+            softwareRegNumber: 'rms_reg_number',
+            version:           'version',
+            certPath:          'cert_path',
+            testing:           true
+        );
+
+        $response = NTAK::message($fakeClient, Carbon::now())->handleOrder(...$orders);
+
+        file_put_contents(
+            __DIR__ . '/../debug.log', 
+            json_encode($fakeClient->lastRequest(), JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) . "\n", 
+            FILE_APPEND
+        );
     }
 }

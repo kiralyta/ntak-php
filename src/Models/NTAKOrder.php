@@ -53,7 +53,7 @@ class NTAKOrder
             $this->validateIfNotStorno();
         }
 
-        $this->drsQuantity     = $this->drsQuantity();
+        $this->drsQuantity = $this->drsQuantity();
         
         $this->end = $end ?: Carbon::now();
     }
@@ -122,6 +122,10 @@ class NTAKOrder
      */
     public function paymentsTotal(): float
     {
+        if ($this->orderType === NTAKOrderType::SZTORNO) {
+            return 0;
+        }
+
         return array_reduce(
             $this->payments ?? [],
             fn (float $carry, NTAKPayment $payment) => $carry + $payment->total,
