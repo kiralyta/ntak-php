@@ -26,6 +26,7 @@ class NTAKOrderItem
      * @param int             $quantity
      * @param Carbon          $when
      * @param bool            $isDrs
+     * @param bool            $bypassServiceFee
      *
      * @return void
      */
@@ -39,7 +40,8 @@ class NTAKOrderItem
         public readonly float           $amount,
         public readonly int             $quantity,
         public readonly Carbon          $when,
-        public readonly bool            $isDrs = false
+        public readonly bool            $isDrs = false,
+        public readonly bool            $bypassServiceFee = false
     ) {
         $this->drsSum = $isDrs
             ? $this->quantity * NTAK::drsAmount

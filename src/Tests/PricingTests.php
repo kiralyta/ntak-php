@@ -13,10 +13,10 @@ use Kiralyta\Ntak\Models\NTAKOrder;
 use Kiralyta\Ntak\Models\NTAKPayment;
 use Kiralyta\Ntak\NTAK;
 use Ramsey\Uuid\Uuid;
-use Kiralyta\Ntak\TestCase;
 use Kiralyta\Ntak\Models\NTAKOrderItem;
+use PHPUnit\Framework\TestCase as FrameworkTestCase;
 
-class PricingTests extends TestCase
+class PricingTests extends FrameworkTestCase
 {
     // 3
     public function test_two_brios_three_hell_no_discount(): void
@@ -458,6 +458,123 @@ class PricingTests extends TestCase
         $this->assertEquals('A_5', $serviceFeeItems[1]['afaKategoria']);
     }
 
+    // 17
+    public function test_one_jegy_one_kaja(): void
+    {
+        $items = [
+            $this->productJegy(1),
+            $this->productKaja(1)
+        ];
+
+        $finalAmount = 2500;
+        $discount = 0;
+        $serviceFee = 0;
+        $order = $this->createOrder($finalAmount, $items, $discount, $serviceFee);
+
+        $builtOrderItems = $order->buildOrderItems();
+
+        $sumOfOrderItems = array_sum(array_column($builtOrderItems, 'tetelOsszesito'));
+        $this->assertEquals($finalAmount, $sumOfOrderItems);
+
+        $discountItems = $this->getDiscountItems($builtOrderItems);
+        $this->assertCount(0, $discountItems);
+
+        $serviceFeeItems = $this->getServiceFeeItems($builtOrderItems);
+        $this->assertCount(0, $serviceFeeItems);
+    }
+
+    // 18
+    public function test_one_jegy_one_kaja_with_service_fee(): void
+    {
+        $items = [
+            $this->productJegy(1),
+            $this->productKaja(1)
+        ];
+
+        $finalAmount = 2630; // kaja should have 130 Ft service fee, but jegy shouldn't (bypass service fee), so: 1000 + 1500 + 130 = 2630
+        $discount = 0;
+        $serviceFee = 13;
+        $order = $this->createOrder($finalAmount, $items, $discount, $serviceFee);
+
+        $builtOrderItems = $order->buildOrderItems();
+
+        $sumOfOrderItems = array_sum(array_column($builtOrderItems, 'tetelOsszesito'));
+        $this->assertEquals($finalAmount, $sumOfOrderItems);
+
+        $discountItems = $this->getDiscountItems($builtOrderItems);
+        $this->assertCount(0, $discountItems);
+
+        $serviceFeeItems = $this->getServiceFeeItems($builtOrderItems);
+        $this->assertCount(1, $serviceFeeItems);
+
+        $this->assertEquals(130, $serviceFeeItems[0]['tetelOsszesito']);
+        $this->assertEquals('C_27', $serviceFeeItems[0]['afaKategoria']);
+    }
+
+    // 19
+    public function test_one_jegy_one_kaja_with_service_fee_with_discount(): void
+    {
+        $items = [
+            $this->productJegy(1),
+            $this->productKaja(1)
+        ];
+
+        $finalAmount = 2367; // kaja (with service fee): 1000 * 0.9 * 1.13 = 1017, jegy (bypass service fee): 1500 * 0.9 = 1350, so: 1017 + 1350 = 2367
+        $discount = 10;
+        $serviceFee = 13;
+        $order = $this->createOrder($finalAmount, $items, $discount, $serviceFee);
+
+        $builtOrderItems = $order->buildOrderItems();
+
+        $sumOfOrderItems = array_sum(array_column($builtOrderItems, 'tetelOsszesito'));
+        $this->assertEquals($finalAmount, $sumOfOrderItems);
+
+        $discountItems = $this->getDiscountItems($builtOrderItems);
+        $this->assertCount(1, $discountItems);
+
+        $this->assertEquals(-250, $discountItems[0]['tetelOsszesito']);
+        $this->assertEquals('C_27', $discountItems[0]['afaKategoria']);
+
+        $serviceFeeItems = $this->getServiceFeeItems($builtOrderItems);
+        $this->assertCount(1, $serviceFeeItems);
+
+        $this->assertEquals(117, $serviceFeeItems[0]['tetelOsszesito']);
+        $this->assertEquals('C_27', $serviceFeeItems[0]['afaKategoria']);
+    }
+
+    // 20
+    public function test_two_kaja_two_brios_two_hell_two_jegy_with_service_fee(): void
+    {
+        $items = [
+            $this->productKaja(2),
+            $this->productBrios(2),
+            $this->productHell(2),
+            $this->productJegy(2)
+        ];
+
+        $finalAmount = 8190; // 
+        $discount = 0;
+        $serviceFee = 13;
+        $order = $this->createOrder($finalAmount, $items, $discount, $serviceFee);
+
+        $builtOrderItems = $order->buildOrderItems();
+
+        $sumOfOrderItems = array_sum(array_column($builtOrderItems, 'tetelOsszesito'));
+        $this->assertEquals($finalAmount, $sumOfOrderItems);
+
+        $discountItems = $this->getDiscountItems($builtOrderItems);
+        $this->assertCount(0, $discountItems);
+
+        $serviceFeeItems = $this->getServiceFeeItems($builtOrderItems);
+        $this->assertCount(2, $serviceFeeItems);
+
+        $this->assertEquals(351, $serviceFeeItems[0]['tetelOsszesito']);
+        $this->assertEquals('C_27', $serviceFeeItems[0]['afaKategoria']);
+
+        $this->assertEquals(235, $serviceFeeItems[1]['tetelOsszesito']);
+        $this->assertEquals('A_5', $serviceFeeItems[1]['afaKategoria']);
+    }
+
     private function getDiscountItems(array $orderItems): array
     {
         return $this->getFilteredItems($orderItems, NTAKSubcategory::KEDVEZMENY);
@@ -547,6 +664,26 @@ class PricingTests extends TestCase
             quantity: $quantity,
             when: Carbon::now(),
             isDrs: true
+        );
+    }
+
+    /**
+     * Reusable product for tests: jegy (1500 Ft, 27% VAT, with bypass service fee option, so service fee will not be added for this product)
+     */
+    private function productJegy(int $quantity): NTAKOrderItem
+    {
+        return new NTAKOrderItem(
+            name: 'jegy',
+            category: NTAKCategory::ETEL,
+            subcategory: NTAKSubcategory::FOETEL,
+            vat: NTAKVat::C_27,
+            price: 1500,
+            amountType: NTAKAmount::DARAB,
+            amount: 1,
+            quantity: $quantity,
+            when: Carbon::now(),
+            isDrs: false,
+            bypassServiceFee: true
         );
     }
 
