@@ -101,7 +101,7 @@ class NTAK
                 'fizetesiInformaciok'          => $ntakOrder->orderType === NTAKOrderType::SZTORNO
                     ? null
                     : [
-                        'rendelesVegosszegeHUF' => $ntakOrder->totalWithDiscount(),
+                        'rendelesVegosszegeHUF' => (int) round($ntakOrder->paymentsTotal()),
                         'fizetesiModok'         => $ntakOrder->buildPaymentTypes(),
                     ],
                 'rendelesTetelek'              => $ntakOrder->orderType === NTAKOrderType::SZTORNO

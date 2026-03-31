@@ -66,7 +66,7 @@ class TestCase extends FrameworkTestCase
      */
     protected function productBrios(int $quantity): NTAKOrderItem
     {
-        return new \Kiralyta\Ntak\Models\NTAKOrderItem(
+        return new NTAKOrderItem(
             name: 'briós',
             category: NTAKCategory::ETEL,
             subcategory: NTAKSubcategory::PEKSUTEMENY,
@@ -85,7 +85,7 @@ class TestCase extends FrameworkTestCase
      */
     protected function productHell(int $quantity): NTAKOrderItem
     {
-        return new \Kiralyta\Ntak\Models\NTAKOrderItem(
+        return new NTAKOrderItem(
             name: 'hell',
             category: NTAKCategory::ALKMENTESITAL_HELYBEN,
             subcategory: NTAKSubcategory::ROSTOS_UDITO,
@@ -100,46 +100,24 @@ class TestCase extends FrameworkTestCase
     }
 
     /**
-     * Create an NTAKOrder with common defaults (Bank card payment) for tests.
+     * Create an NTAKOrder for tests with given parameters.
      *
+     * @param int $finalAmount
      * @param array $items
      * @param int $discount
      * @param int $serviceFee
      * @param NTAKOrderType $orderType
-     * @return \Kiralyta\Ntak\Models\NTAKOrder
+     * @return NTAKOrder
      */
-    protected function createOrder(array $items, int $discount, int $serviceFee): \Kiralyta\Ntak\Models\NTAKOrder
+    protected function createOrder(int $finalAmount, array $items, int $discount, int $serviceFee): NTAKOrder
     {
-        $end = Carbon::now();
-        $start = $end->copy()->subMinutes(5);
-
-        $productsTotal = array_reduce(
-            $items,
-            function ($carry, $item) {
-                return $carry + $item->roundedSum();
-            },
-            0
-        );
-
-        $drsQuantity = array_reduce(
-            $items,
-            function ($carry, $item) {
-                return $carry + (property_exists($item, 'isDrs') && $item->isDrs ? (int)$item->quantity : 0);
-            },
-            0
-        );
-
-        $productsTotal += $drsQuantity * NTAK::drsAmount;
-
-        $total = (int) round($productsTotal * (1 - $discount / 100) * (1 + $serviceFee / 100));
-
         return new NTAKOrder(
             orderType: NTAKOrderType::NORMAL,
             orderId: Uuid::uuid4(),
             orderItems: $items,
-            start: $start,
-            end: $end,
-            payments: [new NTAKPayment(NTAKPaymentType::BANKKARTYA, $total)], // TODO?
+            start: Carbon::now()->subMinutes(5),
+            end: Carbon::now(),
+            payments: [new NTAKPayment(NTAKPaymentType::BANKKARTYA, $finalAmount)],
             discount: $discount,
             serviceFee: $serviceFee
         );
@@ -163,15 +141,6 @@ class TestCase extends FrameworkTestCase
         file_put_contents(
             __DIR__ . '/../debug.log', 
             json_encode($fakeClient->lastRequest(), JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) . "\n", 
-            FILE_APPEND
-        );
-    }
-
-    public function logThis($content): void
-    {
-        file_put_contents(
-            __DIR__ . '/../debug.log', 
-            json_encode($content, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) . "\n", 
             FILE_APPEND
         );
     }
