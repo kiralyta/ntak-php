@@ -63,7 +63,7 @@ enum NTAKCategory: string
                 NTAKSubcategory::ITALCSOMAG,
             ],
             NTAKCategory::EGYEB => [
-                // NTAKSubcategory::EGYEB, this one should not be selectable
+                NTAKSubcategory::EGYEB,
                 NTAKSubcategory::SZERVIZDIJ,
                 NTAKSubcategory::BORRAVALO,
                 NTAKSubcategory::KISZALLITASI_DIJ,

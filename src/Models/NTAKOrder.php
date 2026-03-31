@@ -278,12 +278,12 @@ class NTAKOrder
     {
         $discountableAmount = 0;
 
-        // 1. Sum up prices of products in this VAT category
+        // sum up prices of products in this VAT category
         foreach ($this->orderItemsWithVat($vat) as $item) {
             $discountableAmount += $item->roundedSum();
         }
 
-        // 2. If this is the E_0 category, add the DRS amount as discountable
+        // if this is the E_0 vat category, add the DRS amount as discountable
         if ($vat === NTAKVat::E_0) {
             $discountableAmount += $this->drsQuantity * NTAK::drsAmount;
         }
@@ -292,8 +292,8 @@ class NTAKOrder
             return $orderItems;
         }
 
-        // 3. Calculate discount.
-        // To match your test (157.5 -> 157), we use ROUND_HALF_DOWN
+        // calculate discount with round half down, because if a product price is .5, it will be rounded up, so its corresponding discount item must be rounded down to keep their sum correct
+        // e.g. 905 Ft with 10% discount: new price will be 905 * 0.9 = 814.5 ~ 815 (round up), and discount will be 905 * 0.1 = 90.5 ~ 90 (round down), check their sum: 815 + 90 = 905
         $discountValue = $discountableAmount * ($this->discount / 100);
         $roundedDiscount = (int) round($discountValue, 0, PHP_ROUND_HALF_DOWN);
 
@@ -320,11 +320,11 @@ class NTAKOrder
     {
         $orderItemsWithVat = $this->orderItemsWithVat($vat);
 
-        // Calculate service fee only on the discounted net product total for this VAT
+        // calculate service fee only on the discounted total for this VAT
         $totalOfOrderItemsWithDiscount = $this->totalOfOrderItemsWithDiscount($orderItemsWithVat);
         $serviceFeeAmount = (int) round($totalOfOrderItemsWithDiscount * $this->serviceFee / 100);
 
-        // Skip if there is no service fee for this category (e.g. E_0 containing only DRS)
+        // skip if there is no service fee for this category (e.g. E_0 containing only DRS)
         if ($serviceFeeAmount <= 0) {
             return $orderItems;
         }
