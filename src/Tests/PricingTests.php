@@ -18,6 +18,7 @@ use PHPUnit\Framework\TestCase as FrameworkTestCase;
 
 class PricingTests extends FrameworkTestCase
 {
+    // don't forget: each line item (order item prices, discount items per VAT, service fees per VAT, DRS items) must be rounded to whole number, which can cause unexpected cases!
     // 1
     public function test_one_kaja(): void
     {

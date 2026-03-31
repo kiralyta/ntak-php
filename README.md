@@ -137,12 +137,12 @@ $order = new NTAKOrder(
     // Vat changed to 27 in all OrderItems that have a category "Helyben készített alkoholmentes ital" in case of isAtTheSpot is false
     isAtTheSpot: true,
 
-    // Discounts and service fees are automatically managed by the package.
-    // You don't have to manually add the OrderItem(s) with "KEDVEZMENY" / "SZERVIZDIJ" subcategories.
-    // VATs are handled automatically as well: discounts and service fees are grouped by VATs (0%, 5%, 27%), rounded to whole number for each line item, as per NTAK docs.
-    // If you are interested in the special cases of pricing the line items and the beauties of weird rounding examples, check out the unit tests in PricingTests.php.
-    // If both discount and service fee are provided, the service fee will be calculated from the discounted total.
-    // The following means 20% discount (defaults to 0) and 10% service fee (defaults to 0).
+    // Discounts and service fees are automatically managed by the package
+    // You don't have to manually add the OrderItem(s) with "KEDVEZMENY" / "SZERVIZDIJ" subcategories
+    // VATs are handled automatically as well: discounts and service fees are grouped by VATs (0%, 5%, 27%), rounded to whole number for each line item, as per NTAK docs
+    // If you are interested in the special cases of pricing the line items and the beauties of unexpected rounding issues, check out the unit tests in PricingTests.php
+    // If both discount and service fee are provided, the service fee will be calculated from the discounted total
+    // The following means 20% discount (defaults to 0) and 10% service fee (defaults to 0)
     discount:    20,
     serviceFee:  10,
 
