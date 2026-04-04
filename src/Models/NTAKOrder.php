@@ -376,7 +376,9 @@ class NTAKOrder
      */
     protected function totalOfOrderItemsWithDiscount(array $orderItems): float
     {
-        return array_reduce(
+        // Calculate the total base price (excluding DRS) for all items 
+        // in this VAT group that are subject to service fee.
+        $groupBaseTotal = array_reduce(
             $orderItems,
             function (float $carry, NTAKOrderItem $orderItem) {
                 // Check if this specific item should bypass the service fee calculation
@@ -384,14 +386,13 @@ class NTAKOrder
                     return $carry;
                 }
 
-                $netSum = $orderItem->roundedSum();
-                $discountValue = (int) round($netSum * ($this->discount / 100), 0, PHP_ROUND_HALF_DOWN);
-                $discountedNet = $netSum - $discountValue;
-
-                return $carry + $discountedNet;
+                return $carry + $orderItem->roundedSum();
             },
             0
         );
+
+        // Apply the discount to the aggregate total
+        return $groupBaseTotal * (1 - $this->discount / 100);
     }
 
     /**

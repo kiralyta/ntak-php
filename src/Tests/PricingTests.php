@@ -665,6 +665,40 @@ class PricingTests extends FrameworkTestCase
         $this->assertEquals('C_27', $serviceFeeItems[0]['afaKategoria']);
     }
 
+    // 22
+    public function test_unnamed(): void
+    {
+        $items = [
+            $this->productUnnamed(1, 3490),            
+            $this->productUnnamed(1, 8490),            
+            $this->productUnnamed(1, 5990),        
+            $this->productUnnamed(1, 3590),            
+        ];
+
+        $finalAmount = 20710; 
+        $discount = 15;
+        $serviceFee = 13;
+        $order = $this->createOrder($finalAmount, $items, $discount, $serviceFee);
+
+        $this->log($order);
+        $builtOrderItems = $order->buildOrderItems();
+
+        $sumOfOrderItems = array_sum(array_column($builtOrderItems, 'tetelOsszesito'));
+        $this->assertEquals($finalAmount, $sumOfOrderItems);
+
+        $discountItems = $this->getDiscountItems($builtOrderItems);
+        $this->assertCount(1, $discountItems);
+
+        $this->assertEquals(-3232, $discountItems[0]['tetelOsszesito']);
+        $this->assertEquals('C_27', $discountItems[0]['afaKategoria']);
+
+        $serviceFeeItems = $this->getServiceFeeItems($builtOrderItems);
+        $this->assertCount(1, $serviceFeeItems);
+
+        $this->assertEquals(2382, $serviceFeeItems[0]['tetelOsszesito']);
+        $this->assertEquals('C_27', $serviceFeeItems[0]['afaKategoria']);
+    }
+
     private function getDiscountItems(array $orderItems): array
     {
         return $this->getFilteredItems($orderItems, NTAKSubcategory::KEDVEZMENY);
@@ -800,6 +834,21 @@ class PricingTests extends FrameworkTestCase
             subcategory: NTAKSubcategory::FOETEL,
             vat: NTAKVat::C_27,
             price: 4490,
+            amountType: NTAKAmount::DARAB,
+            amount: 1,
+            quantity: $quantity,
+            when: Carbon::now()
+        );
+    }
+
+    private function productUnnamed(int $quantity, int $price): NTAKOrderItem
+    {
+        return new NTAKOrderItem(
+            name: 'unnamed',
+            category: NTAKCategory::ETEL,
+            subcategory: NTAKSubcategory::FOETEL,
+            vat: NTAKVat::C_27,
+            price: $price,
             amountType: NTAKAmount::DARAB,
             amount: 1,
             quantity: $quantity,
