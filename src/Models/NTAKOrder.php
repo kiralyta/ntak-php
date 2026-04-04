@@ -276,31 +276,27 @@ class NTAKOrder
      */
     protected function addDiscountRequestByVat(array $orderItems, NTAKVat $vat): array
     {
-        $discountableAmount = 0;
+        $totalRoundedDiscount = 0;
 
-        // sum up prices of products in this VAT category
+        // Calculate and round discount for each item individually, in this vat category
         foreach ($this->orderItemsWithVat($vat) as $item) {
-            $discountableAmount += $item->roundedSum();
+            $itemDiscount = $item->roundedSum() * ($this->discount / 100);
+            
+            // calculate discount with round half down, because if a product price is .5, it will be rounded up, so its corresponding discount item must be rounded down to keep their sum correct
+            // e.g. 905 Ft with 10% discount: new price will be 905 * 0.9 = 814.5 ~ 815 (round up), and discount will be 905 * 0.1 = 90.5 ~ 90 (round down), check their sum: 815 + 90 = 905
+            $totalRoundedDiscount += (int) round($itemDiscount, 0, PHP_ROUND_HALF_DOWN);
         }
 
-        // if this is the E_0 vat category, add the DRS amount as discountable
-        if ($vat === NTAKVat::E_0) {
-            $discountableAmount += $this->drsQuantity * NTAK::drsAmount;
+        // Handle DRS as a separate block for the E_0 category
+        if ($vat === NTAKVat::E_0 && $this->drsQuantity > 0) {
+            $drsDiscount = ($this->drsQuantity * NTAK::drsAmount) * ($this->discount / 100);
+            $totalRoundedDiscount += (int) round($drsDiscount, 0, PHP_ROUND_HALF_DOWN);
         }
 
-        if ($discountableAmount <= 0) {
-            return $orderItems;
-        }
-
-        // calculate discount with round half down, because if a product price is .5, it will be rounded up, so its corresponding discount item must be rounded down to keep their sum correct
-        // e.g. 905 Ft with 10% discount: new price will be 905 * 0.9 = 814.5 ~ 815 (round up), and discount will be 905 * 0.1 = 90.5 ~ 90 (round down), check their sum: 815 + 90 = 905
-        $discountValue = $discountableAmount * ($this->discount / 100);
-        $roundedDiscount = (int) round($discountValue, 0, PHP_ROUND_HALF_DOWN);
-
-        if ($roundedDiscount > 0) {
+        if ($totalRoundedDiscount > 0) {
             $orderItems[] = NTAKOrderItem::buildDiscountRequest(
                 $vat,
-                -$roundedDiscount,
+                -$totalRoundedDiscount,
                 $this->end
             );
         }
@@ -388,9 +384,9 @@ class NTAKOrder
                     return $carry;
                 }
 
-                // Apply discount to the net sum (excluding DRS)
                 $netSum = $orderItem->roundedSum();
-                $discountedNet = $netSum * (1 - $this->discount / 100);
+                $discountValue = (int) round($netSum * ($this->discount / 100), 0, PHP_ROUND_HALF_DOWN);
+                $discountedNet = $netSum - $discountValue;
 
                 return $carry + $discountedNet;
             },

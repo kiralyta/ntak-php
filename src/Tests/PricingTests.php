@@ -631,6 +631,40 @@ class PricingTests extends FrameworkTestCase
         $this->assertEquals('A_5', $serviceFeeItems[1]['afaKategoria']);
     }
 
+    // 21
+    public function test_one_vacsi_one_uzsi_with_service_fee_with_discount(): void
+    {
+        $items = [
+            $this->productVacsi(1),
+            $this->productUzsi(1)
+        ];
+
+        // service fee: (3490 + 4490) * 0.13 * 0.85 = 881.79 ~ 882
+        // final amount: round(3490 * 0.85) + round(4490 * 0.85) + 882 = round(2966.5) + round(3816.5) + 882 = 2967 + 3817 + 882 = 7666
+        $finalAmount = 7666; 
+        $discount = 15;
+        $serviceFee = 13;
+        $order = $this->createOrder($finalAmount, $items, $discount, $serviceFee);
+
+        $this->log($order);
+        $builtOrderItems = $order->buildOrderItems();
+
+        $sumOfOrderItems = array_sum(array_column($builtOrderItems, 'tetelOsszesito'));
+        $this->assertEquals($finalAmount, $sumOfOrderItems);
+
+        $discountItems = $this->getDiscountItems($builtOrderItems);
+        $this->assertCount(1, $discountItems);
+
+        $this->assertEquals(-1196, $discountItems[0]['tetelOsszesito']);
+        $this->assertEquals('C_27', $discountItems[0]['afaKategoria']);
+
+        $serviceFeeItems = $this->getServiceFeeItems($builtOrderItems);
+        $this->assertCount(1, $serviceFeeItems);
+
+        $this->assertEquals(882, $serviceFeeItems[0]['tetelOsszesito']);
+        $this->assertEquals('C_27', $serviceFeeItems[0]['afaKategoria']);
+    }
+
     private function getDiscountItems(array $orderItems): array
     {
         return $this->getFilteredItems($orderItems, NTAKSubcategory::KEDVEZMENY);
@@ -740,6 +774,36 @@ class PricingTests extends FrameworkTestCase
             when: Carbon::now(),
             isDrs: false,
             bypassServiceFee: true
+        );
+    }
+
+    private function productVacsi(int $quantity): NTAKOrderItem
+    {
+        return new NTAKOrderItem(
+            name: 'vacsi',
+            category: NTAKCategory::ETEL,
+            subcategory: NTAKSubcategory::FOETEL,
+            vat: NTAKVat::C_27,
+            price: 3490,
+            amountType: NTAKAmount::DARAB,
+            amount: 1,
+            quantity: $quantity,
+            when: Carbon::now()
+        );
+    }
+
+    private function productUzsi(int $quantity): NTAKOrderItem
+    {
+        return new NTAKOrderItem(
+            name: 'uzsi',
+            category: NTAKCategory::ETEL,
+            subcategory: NTAKSubcategory::FOETEL,
+            vat: NTAKVat::C_27,
+            price: 4490,
+            amountType: NTAKAmount::DARAB,
+            amount: 1,
+            quantity: $quantity,
+            when: Carbon::now()
         );
     }
 
