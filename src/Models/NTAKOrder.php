@@ -386,7 +386,8 @@ class NTAKOrder
                     return $carry;
                 }
 
-                return $carry + $orderItem->roundedSum();
+                // Use rawSum() here for float precision
+                return $carry + $orderItem->rawSum();
             },
             0
         );

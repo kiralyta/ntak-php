@@ -156,4 +156,12 @@ class NTAKOrderItem
     {
         return round($this->quantity * $this->price - $this->drsSum);
     }
+
+    /**
+     * Returns the raw float sum (Quantity * Price - DRS)
+     */
+    public function rawSum(): float
+    {
+        return ($this->quantity * $this->price) - ($this->isDrs ? $this->quantity * NTAK::drsAmount : 0);
+    }
 }
