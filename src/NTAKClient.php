@@ -47,10 +47,12 @@ class NTAKClient
             : self::$prodUrl;
 
         $this->client = new Client([
-            'base_uri' => $this->url,
-            'cert'     => $certPath,
-            'ssl_key'  => $certPath,
-            'verify'   => false,
+            'base_uri'        => $this->url,
+            'cert'            => $certPath,
+            'ssl_key'         => $certPath,
+            'verify'          => false,
+            'timeout'         => 30.0,
+            'connect_timeout' => 20.0,
         ]);
     }
 
