@@ -735,6 +735,39 @@ class PricingTests extends FrameworkTestCase
         $this->assertEquals('C_27', $serviceFeeItems[1]['afaKategoria']);
     }
 
+    // 24
+    public function test_unnamed4(): void
+    {
+        $items = [
+            $this->productUnnamed(1, 681.82),                  
+        ];
+
+        // service fee: 681.82 * 0.1 * 0.75 = 51.1365 ~ 51
+        // final amount: round(681.82 * 0.75) + 51 = round(511.365) + 51 = 511 + 51 = 562
+        $finalAmount = 562; 
+        $discount = 25;
+        $serviceFee = 10;
+        $order = $this->createOrder($finalAmount, $items, $discount, $serviceFee);
+
+        $this->log($order);
+        $builtOrderItems = $order->buildOrderItems();
+
+        $sumOfOrderItems = array_sum(array_column($builtOrderItems, 'tetelOsszesito'));
+        $this->assertEquals($finalAmount, $sumOfOrderItems);
+
+        $discountItems = $this->getDiscountItems($builtOrderItems);
+        $this->assertCount(1, $discountItems);
+
+        $this->assertEquals(-171, $discountItems[0]['tetelOsszesito']);
+        $this->assertEquals('C_27', $discountItems[0]['afaKategoria']);
+
+        $serviceFeeItems = $this->getServiceFeeItems($builtOrderItems);
+        $this->assertCount(1, $serviceFeeItems);
+
+        $this->assertEquals(51, $serviceFeeItems[0]['tetelOsszesito']);
+        $this->assertEquals('C_27', $serviceFeeItems[0]['afaKategoria']);
+    }
+
     private function getDiscountItems(array $orderItems): array
     {
         return $this->getFilteredItems($orderItems, NTAKSubcategory::KEDVEZMENY);

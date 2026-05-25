@@ -278,19 +278,20 @@ class NTAKOrder
     {
         $totalRoundedDiscount = 0;
 
-        // Calculate and round discount for each item individually, in this vat category
+        // Calculate discount as the delta between rounded original price and rounded discounted price
         foreach ($this->orderItemsWithVat($vat) as $item) {
-            $itemDiscount = $item->roundedSum() * ($this->discount / 100);
+            $roundedOriginal   = $item->roundedSum();
+            $roundedDiscounted = (int) round($item->rawSum() * (1 - $this->discount / 100));
             
-            // calculate discount with round half down, because if a product price is .5, it will be rounded up, so its corresponding discount item must be rounded down to keep their sum correct
-            // e.g. 905 Ft with 10% discount: new price will be 905 * 0.9 = 814.5 ~ 815 (round up), and discount will be 905 * 0.1 = 90.5 ~ 90 (round down), check their sum: 815 + 90 = 905
-            $totalRoundedDiscount += (int) round($itemDiscount, 0, PHP_ROUND_HALF_DOWN);
+            $totalRoundedDiscount += ($roundedOriginal - $roundedDiscounted);
         }
 
         // Handle DRS as a separate block for the E_0 category
         if ($vat === NTAKVat::E_0 && $this->drsQuantity > 0) {
-            $drsDiscount = ($this->drsQuantity * NTAK::drsAmount) * ($this->discount / 100);
-            $totalRoundedDiscount += (int) round($drsDiscount, 0, PHP_ROUND_HALF_DOWN);
+            $drsTotalOriginal   = $this->drsQuantity * NTAK::drsAmount;
+            $drsTotalDiscounted = (int) round($drsTotalOriginal * (1 - $this->discount / 100));
+            
+            $totalRoundedDiscount += ($drsTotalOriginal - $drsTotalDiscounted);
         }
 
         if ($totalRoundedDiscount > 0) {
