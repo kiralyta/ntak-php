@@ -27,6 +27,7 @@ class NTAKOrderItem
      * @param Carbon          $when
      * @param bool            $isDrs
      * @param bool            $bypassServiceFee
+     * @param int|null        $discount Item level discount (%). Null means the order level discount applies.
      *
      * @return void
      */
@@ -41,11 +42,36 @@ class NTAKOrderItem
         public readonly int             $quantity,
         public readonly Carbon          $when,
         public readonly bool            $isDrs = false,
-        public readonly bool            $bypassServiceFee = false
+        public readonly bool            $bypassServiceFee = false,
+        public readonly ?int            $discount = null
     ) {
         $this->drsSum = $isDrs
             ? $this->quantity * NTAK::drsAmount
             : 0;
+    }
+
+    /**
+     * The discount rate (%) that applies to this item.
+     *
+     * An item level discount overrides the order level one. Null means the item inherits whatever rate the order carries.
+     *
+     * @param  int $orderDiscount
+     * @return int
+     */
+    public function effectiveDiscount(int $orderDiscount = 0): int
+    {
+        return $this->discount ?? $orderDiscount;
+    }
+
+    /**
+     * Returns the raw float sum after the item's effective discount is applied.
+     *
+     * @param  int $orderDiscount
+     * @return float
+     */
+    public function discountedRawSum(int $orderDiscount = 0): float
+    {
+        return $this->rawSum() * (1 - $this->effectiveDiscount($orderDiscount) / 100);
     }
 
     /**

@@ -76,7 +76,7 @@ class NTAKOrder
             $orderItems[] = NTAKOrderItem::buildDrsRequest($this->drsQuantity, $this->end);
         }
 
-        if ($orderItems !== null && $this->discount > 0) {
+        if ($orderItems !== null && ($this->discount > 0 || $this->hasItemDiscounts())) {
             $orderItems = $this->buildDiscountRequests($orderItems);
         }
 
@@ -141,6 +141,15 @@ class NTAKOrder
     {
         if ($this->discount > 100) {
             throw new InvalidArgumentException('discount cannot be greater than 100');
+        }
+
+        foreach ($this->orderItems ?? [] as $orderItem) {
+            if ($orderItem instanceof NTAKOrderItem
+                && $orderItem->discount !== null
+                && $orderItem->discount > 100
+            ) {
+                throw new InvalidArgumentException('order item discount cannot be greater than 100');
+            }
         }
     }
 
@@ -281,17 +290,14 @@ class NTAKOrder
         // Calculate discount as the delta between rounded original price and rounded discounted price
         foreach ($this->orderItemsWithVat($vat) as $item) {
             $roundedOriginal   = $item->roundedSum();
-            $roundedDiscounted = (int) round($item->rawSum() * (1 - $this->discount / 100));
-            
+            $roundedDiscounted = (int) round($item->discountedRawSum($this->discount));
+
             $totalRoundedDiscount += ($roundedOriginal - $roundedDiscounted);
         }
 
         // Handle DRS as a separate block for the E_0 category
         if ($vat === NTAKVat::E_0 && $this->drsQuantity > 0) {
-            $drsTotalOriginal   = $this->drsQuantity * NTAK::drsAmount;
-            $drsTotalDiscounted = (int) round($drsTotalOriginal * (1 - $this->discount / 100));
-            
-            $totalRoundedDiscount += ($drsTotalOriginal - $drsTotalDiscounted);
+            $totalRoundedDiscount += $this->drsRoundedDiscount();
         }
 
         if ($totalRoundedDiscount > 0) {
@@ -303,6 +309,54 @@ class NTAKOrder
         }
 
         return $orderItems;
+    }
+
+    /**
+     * Whether any order item carries its own discount rate.
+     *
+     * @return bool
+     */
+    protected function hasItemDiscounts(): bool
+    {
+        foreach ($this->orderItems ?? [] as $orderItem) {
+            if ($orderItem->discount !== null) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * The rounded discount amount on the DRS portion of the order.
+     *
+     * Without item level discounts the whole DRS block shares one rate, so it is summed and rounded once.
+     * With item level discounts each DRS item has to be discounted on its own.
+     *
+     * @return int
+     */
+    protected function drsRoundedDiscount(): int
+    {
+        if (! $this->hasItemDiscounts()) {
+            $drsTotalOriginal   = $this->drsQuantity * NTAK::drsAmount;
+            $drsTotalDiscounted = (int) round($drsTotalOriginal * (1 - $this->discount / 100));
+
+            return $drsTotalOriginal - $drsTotalDiscounted;
+        }
+
+        $totalRoundedDiscount = 0;
+        foreach ($this->orderItems as $orderItem) {
+            if (! $orderItem->isDrs) {
+                continue;
+            }
+
+            $drsTotalOriginal   = $orderItem->quantity * NTAK::drsAmount;
+            $drsTotalDiscounted = (int) round($drsTotalOriginal * (1 - $orderItem->effectiveDiscount($this->discount) / 100));
+
+            $totalRoundedDiscount += ($drsTotalOriginal - $drsTotalDiscounted);
+        }
+
+        return $totalRoundedDiscount;
     }
 
     /**
@@ -377,9 +431,9 @@ class NTAKOrder
      */
     protected function totalOfOrderItemsWithDiscount(array $orderItems): float
     {
-        // Calculate the total base price (excluding DRS) for all items 
-        // in this VAT group that are subject to service fee.
-        $groupBaseTotal = array_reduce(
+        // Calculate the total base price (excluding DRS) for all items
+        // in this VAT group that are subject to service fee, applying each item's own effective discount as we go.
+        return array_reduce(
             $orderItems,
             function (float $carry, NTAKOrderItem $orderItem) {
                 // Check if this specific item should bypass the service fee calculation
@@ -387,14 +441,11 @@ class NTAKOrder
                     return $carry;
                 }
 
-                // Use rawSum() here for float precision
-                return $carry + $orderItem->rawSum();
+                // Use discountedRawSum() here for float precision
+                return $carry + $orderItem->discountedRawSum($this->discount);
             },
             0
         );
-
-        // Apply the discount to the aggregate total
-        return $groupBaseTotal * (1 - $this->discount / 100);
     }
 
     /**

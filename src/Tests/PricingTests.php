@@ -768,6 +768,150 @@ class PricingTests extends FrameworkTestCase
         $this->assertEquals('C_27', $serviceFeeItems[0]['afaKategoria']);
     }
 
+    // 25 - item level discount, no order level discount
+    public function test_one_kaja_with_item_discount_one_jegy_without(): void
+    {
+        $items = [
+            $this->productKaja(1, discount: 20),
+            $this->productUnnamed(1, 3000),
+        ];
+
+        // kaja: round(1000 * 0.8) = 800, the other stays 3000
+        $finalAmount = 3800;
+        $discount = 0;
+        $serviceFee = 0;
+        $order = $this->createOrder($finalAmount, $items, $discount, $serviceFee);
+
+        $this->log($order);
+        $builtOrderItems = $order->buildOrderItems();
+
+        $sumOfOrderItems = array_sum(array_column($builtOrderItems, 'tetelOsszesito'));
+        $this->assertEquals($finalAmount, $sumOfOrderItems);
+
+        $discountItems = $this->getDiscountItems($builtOrderItems);
+        $this->assertCount(1, $discountItems);
+        $this->assertEquals(-200, $discountItems[0]['tetelOsszesito']);
+        $this->assertEquals('C_27', $discountItems[0]['afaKategoria']);
+
+        $serviceFeeItems = $this->getServiceFeeItems($builtOrderItems);
+        $this->assertCount(0, $serviceFeeItems);
+    }
+
+    // 26 - item level discount overrides the order level one, it does not stack
+    public function test_item_discount_overrides_order_discount(): void
+    {
+        $items = [
+            $this->productKaja(1, discount: 20),
+            $this->productPia(1),
+        ];
+
+        // kaja: item 20% wins over the order's 10% -> round(1000 * 0.8) = 800
+        // pia:  inherits the order's 10%          -> round(397 * 0.9)  = 357
+        $finalAmount = 1157;
+        $discount = 10;
+        $serviceFee = 0;
+        $order = $this->createOrder($finalAmount, $items, $discount, $serviceFee);
+
+        $builtOrderItems = $order->buildOrderItems();
+
+        $sumOfOrderItems = array_sum(array_column($builtOrderItems, 'tetelOsszesito'));
+        $this->assertEquals($finalAmount, $sumOfOrderItems);
+
+        $discountItems = $this->getDiscountItems($builtOrderItems);
+        $this->assertCount(1, $discountItems);
+        $this->assertEquals(-240, $discountItems[0]['tetelOsszesito']); // 200 + 40
+    }
+
+    // 27 - an explicit 0% item discount means full price, even with an order level discount
+    public function test_zero_item_discount_beats_order_discount(): void
+    {
+        $items = [
+            $this->productKaja(1, discount: 0),
+            $this->productPia(1),
+        ];
+
+        // kaja: explicit 0% -> 1000
+        // pia:  order's 50% -> round(397 * 0.5) = round(198.5) = 199
+        $finalAmount = 1199;
+        $discount = 50;
+        $serviceFee = 0;
+        $order = $this->createOrder($finalAmount, $items, $discount, $serviceFee);
+
+        $builtOrderItems = $order->buildOrderItems();
+
+        $sumOfOrderItems = array_sum(array_column($builtOrderItems, 'tetelOsszesito'));
+        $this->assertEquals($finalAmount, $sumOfOrderItems);
+
+        $discountItems = $this->getDiscountItems($builtOrderItems);
+        $this->assertCount(1, $discountItems);
+        $this->assertEquals(-198, $discountItems[0]['tetelOsszesito']);
+    }
+
+    // 28 - a DRS item carrying its own discount discounts the deposit too
+    public function test_one_hell_with_item_discount_one_kaja(): void
+    {
+        $items = [
+            $this->productKaja(1),
+            $this->productHell(1, discount: 50),
+        ];
+
+        // kaja: 1000, hell: 400 * 0.5 = 200 (350 base -> 175, 50 DRS -> 25)
+        $finalAmount = 1200;
+        $discount = 0;
+        $serviceFee = 0;
+        $order = $this->createOrder($finalAmount, $items, $discount, $serviceFee);
+
+        $builtOrderItems = $order->buildOrderItems();
+
+        $sumOfOrderItems = array_sum(array_column($builtOrderItems, 'tetelOsszesito'));
+        $this->assertEquals($finalAmount, $sumOfOrderItems);
+
+        $discountItems = $this->getDiscountItems($builtOrderItems);
+        $this->assertCount(2, $discountItems);
+
+        $byVat = array_column($discountItems, 'tetelOsszesito', 'afaKategoria');
+        $this->assertEquals(-175, $byVat['C_27']);
+        $this->assertEquals(-25, $byVat['E_0']);
+    }
+
+    // 29 - the service fee is charged on the item discounted base
+    public function test_one_kaja_with_item_discount_one_pia_with_service_fee(): void
+    {
+        $items = [
+            $this->productKaja(1, discount: 20),
+            $this->productPia(1),
+        ];
+
+        // base after item discounts: 800 + 397 = 1197
+        // service fee: round(1197 * 0.1) = round(119.7) = 120
+        // final: 1000 + 397 - 200 + 120 = 1317
+        $finalAmount = 1317;
+        $discount = 0;
+        $serviceFee = 10;
+        $order = $this->createOrder($finalAmount, $items, $discount, $serviceFee);
+
+        $builtOrderItems = $order->buildOrderItems();
+
+        $sumOfOrderItems = array_sum(array_column($builtOrderItems, 'tetelOsszesito'));
+        $this->assertEquals($finalAmount, $sumOfOrderItems);
+
+        $discountItems = $this->getDiscountItems($builtOrderItems);
+        $this->assertCount(1, $discountItems);
+        $this->assertEquals(-200, $discountItems[0]['tetelOsszesito']);
+
+        $serviceFeeItems = $this->getServiceFeeItems($builtOrderItems);
+        $this->assertCount(1, $serviceFeeItems);
+        $this->assertEquals(120, $serviceFeeItems[0]['tetelOsszesito']);
+    }
+
+    // 30 - an item discount above 100 is rejected
+    public function test_item_discount_over_hundred_throws(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+
+        $this->createOrder(1000, [$this->productKaja(1, discount: 120)], 0, 0);
+    }
+
     private function getDiscountItems(array $orderItems): array
     {
         return $this->getFilteredItems($orderItems, NTAKSubcategory::KEDVEZMENY);
@@ -790,7 +934,7 @@ class PricingTests extends FrameworkTestCase
     /**
      * Reusable product for tests: kaja (1000 Ft, 27% VAT)
      */
-    private function productKaja(int $quantity): NTAKOrderItem
+    private function productKaja(int $quantity, ?int $discount = null): NTAKOrderItem
     {
         return new NTAKOrderItem(
             name: 'kaja',
@@ -801,14 +945,15 @@ class PricingTests extends FrameworkTestCase
             amountType: NTAKAmount::DARAB,
             amount: 1,
             quantity: $quantity,
-            when: Carbon::now()
+            when: Carbon::now(),
+            discount: $discount
         );
     }
 
     /**
      * Reusable product for tests: pia (397 Ft, 27% VAT, no DRS)
      */
-    private function productPia(int $quantity): NTAKOrderItem
+    private function productPia(int $quantity, ?int $discount = null): NTAKOrderItem
     {
         return new NTAKOrderItem(
             name: 'pia',
@@ -819,7 +964,8 @@ class PricingTests extends FrameworkTestCase
             amountType: NTAKAmount::LITER,
             amount: 0.04,
             quantity: $quantity,
-            when: Carbon::now()
+            when: Carbon::now(),
+            discount: $discount
         );
     }
 
@@ -844,7 +990,7 @@ class PricingTests extends FrameworkTestCase
     /**
      * Reusable product for tests: hell (400 Ft, 27% VAT, with DRS included)
      */
-    private function productHell(int $quantity): NTAKOrderItem
+    private function productHell(int $quantity, ?int $discount = null): NTAKOrderItem
     {
         return new NTAKOrderItem(
             name: 'hell',
@@ -856,7 +1002,8 @@ class PricingTests extends FrameworkTestCase
             amount: 1,
             quantity: $quantity,
             when: Carbon::now(),
-            isDrs: true
+            isDrs: true,
+            discount: $discount
         );
     }
 
@@ -883,7 +1030,7 @@ class PricingTests extends FrameworkTestCase
     /**
      * Reusable product for tests with provided parameters.
      */
-    private function productUnnamed(int $quantity, float $price, NTAKVat $vat = NTAKVat::C_27, bool $drs = false): NTAKOrderItem
+    private function productUnnamed(int $quantity, float $price, NTAKVat $vat = NTAKVat::C_27, bool $drs = false, ?int $discount = null): NTAKOrderItem
     {
         return new NTAKOrderItem(
             name: 'unnamed',
@@ -895,7 +1042,8 @@ class PricingTests extends FrameworkTestCase
             amount: 1,
             quantity: $quantity,
             when: Carbon::now(),
-            isDrs: $drs
+            isDrs: $drs,
+            discount: $discount
         );
     }
 
