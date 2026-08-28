@@ -11,6 +11,7 @@ Table of Contents:
       - [Create an Order Item Instance](#create-an-order-item-instance)
       - [Create a Payment Instance](#create-a-payment-instance)
       - [Create an Order Instance](#create-an-order-instance)
+    - [Item Level Discounts](#item-level-discounts)
     - [Messages (Requests)](#messages-requests)
       - [Store, Update, Destroy Order (Rendelésösszesítő)](#store-update-destroy-order-rendelésösszesítő)
       - [Close Day (Napzárás)](#close-day-napzárás)
@@ -93,7 +94,12 @@ $orderItem = new NTAKOrderItem(
     // DRS is handled automatically
     // You don't have to manually create the DRS NTAKOrderItem with vat 0
     isDrs:            false,
-    bypassServiceFee: false // if you want to avoid adding service fee for this item, set bypassServiceFee to true
+    bypassServiceFee: false, // if you want to avoid adding service fee for this item, set bypassServiceFee to true
+
+    // Item level discount (%) - defaults to null
+    // null means the item inherits the order level discount
+    // any other value (0 included) overrides the order level discount for this item
+    discount:         50
 );
 ```
 
@@ -101,6 +107,7 @@ $orderItem = new NTAKOrderItem(
 > - [NTAKSubcategory](#ntaksubcategory)
 > - [NTAKVat](#ntakvat)
 > - [NTAKAmount](#ntakamount)
+> - [Item Level Discounts](#item-level-discounts)
 
 #### Create a Payment Instance
 
@@ -142,6 +149,7 @@ $order = new NTAKOrder(
     // VATs are handled automatically as well: discounts and service fees are grouped by VATs (0%, 5%, 27%), rounded to whole number for each line item, as per NTAK docs
     // If you are interested in the special cases of pricing the line items and the beauties of unexpected rounding issues, check out the unit tests in PricingTests.php
     // If both discount and service fee are provided, the service fee will be calculated from the discounted total
+    // The order level discount applies to every order item that does not carry its own discount
     // The following means 20% discount (defaults to 0) and 10% service fee (defaults to 0)
     discount:    20,
     serviceFee:  10,
@@ -158,6 +166,36 @@ $order = new NTAKOrder(
 > - [NTAKOrderType](#ntakordertype)
 > - [NTAKOrderItem](#create-an-order-item-instance)
 > - [NTAKPayment](#create-a-payment-instance)
+
+### Item Level Discounts
+
+Besides the order level `discount`, every `NTAKOrderItem` can carry its own `discount` rate.
+
+``` php
+$order = new NTAKOrder(
+    // ...
+    orderItems: [
+        // 20% off this one, regardless of the order level discount
+        new NTAKOrderItem(..., discount: 20),
+        // full price, even though the order is discounted by 10%
+        new NTAKOrderItem(..., discount: 0),
+        // no item level discount -> the order's 10% applies
+        new NTAKOrderItem(...),
+    ],
+    discount: 10
+);
+```
+
+The rules:
+
+- The item level `discount` **overrides** the order level one, the two do **not** stack.
+- `discount: null` (the default) means the item inherits the order level rate.
+- An explicit `discount: 0` means full price, even when the order is discounted.
+- Item discounts alone are enough to produce `KEDVEZMENY` line items, the order level `discount` may stay `0`.
+- Discounts are still grouped by VAT and rounded per VAT group, as before. Each item's discount is computed as the delta of its rounded original and its rounded discounted sum, so the built order items always add up to the amount the guest pays.
+- DRS deposits follow the discount of the item they belong to. An item with `isDrs: true` and `discount: 50` gets both its base price and its deposit discounted by 50%, the deposit half landing in the `E_0` VAT group.
+- Service fee is calculated from the total that already has every item's own discount applied (items with `bypassServiceFee: true` still stay out of it).
+- An item `discount` greater than `100` throws an `InvalidArgumentException`, just like the order level one.
 
 ### Messages (Requests)
 
